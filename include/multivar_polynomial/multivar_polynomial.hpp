@@ -1,32 +1,21 @@
-#ifndef _MULTIVAR_POLYNOMIAL_HPP_
-#define _MULTIVAR_POLYNOMIAL_HPP_
+#ifndef _MULTIVAR_POLYNOMIAL_MULTIVAR_POLYNOMIAL_HPP_
+#define _MULTIVAR_POLYNOMIAL_MULTIVAR_POLYNOMIAL_HPP_
 
+
+#include "multivar_polynomial/type.hpp"
 
 #include <algorithm>
-#include <array>
 #include <iterator>
 #include <sstream>
 
 #include "boost/container/flat_map.hpp"
 #include "boost/container/new_allocator.hpp"
-#include "boost/math/tools/polynomial.hpp"
 #include "Eigen/Core"
 #include "fmt/core.h"
 
 
 namespace multivar_polynomial
 {
-  template <
-    std::signed_integral IntType,
-    int D
-  >
-  using IndexType = Eigen::Array<IntType, D, 1>;
-
-
-  template <class R, int D>
-  using CoordType = Eigen::Array<R, D, 1>;
-
-
   template <
     std::signed_integral IntType,
     int D
@@ -66,7 +55,7 @@ namespace multivar_polynomial
   public:
     static_assert(D > 0, "MultiVarPolynomial: the dimension must be positive.");
 
-    static const int dim{D};
+    inline static const int dim{D};
 
     using Index = AllocatorOrContainer::value_type::first_type;
     using Coord = CoordType<R, dim>;
@@ -77,24 +66,31 @@ namespace multivar_polynomial
   public:
     using key_type = IndexContainer::key_type;
     using mapped_type = IndexContainer::mapped_type;
-    using key_compare = IndexContainer::key_compare;
     using value_type = IndexContainer::value_type;
+    using movable_value_type = IndexContainer::movable_value_type;
+
+    using key_compare = IndexContainer::key_compare;
+    using value_compare = IndexContainer::value_compare;
+
     using sequence_type = IndexContainer::sequence_type;
+
     using allocator_type = IndexContainer::allocator_type;
     using allocator_traits_type = IndexContainer::allocator_traits_type;
+    using stored_allocator_type = IndexContainer::stored_allocator_type;
+
     using pointer = IndexContainer::pointer;
     using const_pointer = IndexContainer::const_pointer;
+
     using reference = IndexContainer::reference;
     using const_reference = IndexContainer::const_reference;
+
     using size_type = IndexContainer::size_type;
     using difference_type = IndexContainer::difference_type;
-    using stored_allocator_type = IndexContainer::stored_allocator_type;
-    using value_compare = IndexContainer::value_compare;
+
     using iterator = IndexContainer::iterator;
     using const_iterator = IndexContainer::const_iterator;
     using reverse_iterator = IndexContainer::reverse_iterator;
     using const_reverse_iterator = IndexContainer::const_reverse_iterator;
-    using movable_value_type = IndexContainer::movable_value_type;
 
 
     explicit MultiVarPolynomial(const allocator_type& allocator) : index2value_(allocator)
@@ -194,6 +190,15 @@ namespace multivar_polynomial
     MultiVarPolynomial(MultiVarPolynomial&&) = default;
     MultiVarPolynomial& operator=(MultiVarPolynomial&&) = default;
     virtual ~MultiVarPolynomial() = default;
+
+
+    static void CheckAxis(std::size_t axis)
+    {
+      if (axis < 0 || axis >= dim)
+      {
+        throw std::runtime_error(fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim));
+      }
+    }
 
 
     allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
@@ -709,15 +714,6 @@ namespace multivar_polynomial
   };
 
 
-  void CheckAxis(int dim, std::size_t axis)
-  {
-    if (axis < 0 || axis >= dim)
-    {
-      throw std::runtime_error(fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim));
-    }
-  }
-
-
   template <
     class R,
     std::signed_integral IntType,
@@ -729,7 +725,7 @@ namespace multivar_polynomial
   {
     using MP = MultiVarPolynomial<R, IntType, Dim, Comparer, AllocatorOrContainer>;
 
-    CheckAxis(MP::dim, axis);
+    MP::CheckAxis(axis);
 
     auto new_index2value_seq = typename MP::sequence_type(p.get_allocator());
     new_index2value_seq.reserve(p.size());
@@ -779,7 +775,7 @@ namespace multivar_polynomial
   {
     using MP = MultiVarPolynomial<R, IntType, Dim, IndexComparer<IntType, Dim>, AllocatorOrContainer>;
 
-    CheckAxis(MP::dim, axis);
+    MP::CheckAxis(axis);
 
     auto new_index2value_seq = typename MP::sequence_type(p.get_allocator());
     new_index2value_seq.reserve(p.size());
@@ -833,7 +829,7 @@ namespace multivar_polynomial
   {
     using MP = MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>;
 
-    CheckAxis(MP::dim, axis);
+    MP::CheckAxis(axis);
 
     auto index2value = p.extract_sequence();
     for(auto& index_and_value : index2value)
@@ -952,15 +948,6 @@ namespace multivar_polynomial
     using MP = MultiVarPolynomial<R, IntType, D, IndexComparer<IntType, D>, AllocatorOrContainer>;
     return OfImpl(p.begin(), p.end(), MP::dim, 0, x);
   }
-
-
-  template <class R, std::size_t D>
-  class PolynomialProduct
-  {
-  public:
-  private:
-    std::array<boost::math::tools::polynomial<R>, D> polynomials_;
-  };
 }
 
 #endif

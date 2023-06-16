@@ -38,6 +38,7 @@ list(APPEND extra_libs Eigen3::Eigen)
 find_package(fmt CONFIG REQUIRED)
 list(APPEND extra_libs fmt::fmt)
 
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(
   ${PROJECT_NAME}
@@ -68,6 +69,7 @@ install(
 install(
   FILES
     include/multivar_polynomial/multivar_polynomial.hpp
+    include/multivar_polynomial/polynomial_product.hpp
   DESTINATION
     include/multivar_polynomial
 )
