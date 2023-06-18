@@ -9,10 +9,7 @@
 
 namespace multivar_polynomial
 {
-  template <
-    std::signed_integral IntType,
-    int D
-  >
+  template <std::signed_integral IntType, int D>
   using IndexType = Eigen::Array<IntType, D, 1>;
 
 

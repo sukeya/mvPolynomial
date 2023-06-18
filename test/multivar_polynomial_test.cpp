@@ -212,3 +212,78 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_default_value_check, * utf::tolerance(t
     BOOST_TEST(m[ans[i].first] == ans[i].second);
   }
 }
+
+
+BOOST_AUTO_TEST_CASE(multivar_polynomial_init_1d, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
+{
+  auto ans = std::vector<std::pair<int, double>>();
+  ans = {
+    {0, 1},
+    {1, 2},
+    {2, 3}
+  };
+
+  auto m = multivar_polynomial::Polynomial<double, int>(ans.begin(), ans.end());
+  for (auto i = 0; i < ans.size(); ++i)
+  {
+    BOOST_TEST(m[ans[i].first] == ans[i].second);
+  }
+}
+
+
+BOOST_AUTO_TEST_CASE(multivar_polynomial_Of_1d, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
+{
+  auto ans = std::vector<std::pair<int, double>>();
+  ans = {
+    {0, 1},
+    {1, 2},
+    {2, 3}
+  };
+
+  auto m = multivar_polynomial::Polynomial<double, int>(ans.begin(), ans.end());
+  BOOST_TEST(Of(m, 0) == 1);
+  BOOST_TEST(Of(m, 2) == 17);
+}
+
+
+BOOST_AUTO_TEST_CASE(multivar_polynomial_derivative_1d, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
+{
+  auto ans = std::vector<std::pair<int, double>>();
+  ans = {
+    {0, 1},
+    {1, 2},
+    {2, 3}
+  };
+  auto m = multivar_polynomial::Polynomial<double, int>(ans.begin(), ans.end());
+  ans = {
+    {0, 2},
+    {1, 6}
+  };
+  auto dm0 = multivar_polynomial::D(m);
+  for (auto i = 0; i < ans.size(); ++i)
+  {
+    BOOST_TEST(dm0[ans[i].first] == ans[i].second);
+  }
+}
+
+
+BOOST_AUTO_TEST_CASE(multivar_polynomial_integral_1d, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
+{
+  auto ans = std::vector<std::pair<int, double>>();
+  ans = {
+    {0, 1},
+    {1, 2},
+    {2, 3}
+  };
+  auto m = multivar_polynomial::Polynomial<double, int>(ans.begin(), ans.end());
+  ans = {
+    {1, 1},
+    {2, 1},
+    {3, 1}
+  };
+  auto sm = multivar_polynomial::Integrate(m);
+  for (auto i = 0; i < ans.size(); ++i)
+  {
+    BOOST_TEST(sm[ans[i].first] == ans[i].second);
+  }
+}
