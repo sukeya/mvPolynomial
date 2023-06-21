@@ -70,6 +70,8 @@ install(
   FILES
     include/multivar_polynomial/multivar_polynomial.hpp
     include/multivar_polynomial/polynomial_product.hpp
+    include/multivar_polynomial/polynomial.hpp
+    include/multivar_polynomial/index_comparer.hpp
   DESTINATION
     include/multivar_polynomial
 )

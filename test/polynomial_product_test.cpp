@@ -3,6 +3,7 @@
 
 #include "boost/test/unit_test.hpp"
 #include "multivar_polynomial/polynomial_product.hpp"
+#include "multivar_polynomial/polynomial.hpp"
 
 #include <vector>
 

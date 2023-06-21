@@ -1,17 +1,14 @@
-#ifndef _MULTIVAR_POLYNOMIAL_MULTIVAR_POLYNOMIAL_HPP_
-#define _MULTIVAR_POLYNOMIAL_MULTIVAR_POLYNOMIAL_HPP_
+#ifndef _MULTIVAR_POLYNOMIAL_POLYNOMIAL_HPP_
+#define _MULTIVAR_POLYNOMIAL_POLYNOMIAL_HPP_
 
 
 #include "multivar_polynomial/type.hpp"
 #include "multivar_polynomial/index_comparer.hpp"
 
-#include <algorithm>
-#include <iterator>
-#include <sstream>
+#include <concepts>
 
 #include "boost/container/flat_map.hpp"
 #include "boost/container/new_allocator.hpp"
-#include "Eigen/Core"
 #include "fmt/core.h"
 
 
@@ -20,22 +17,19 @@ namespace multivar_polynomial
   template <
     class R,
     std::signed_integral IntType,
-    int D,
-    class Comparer = IndexComparer<IntType, D>,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
+    class Comparer = IndexComparer<IntType, 1>,
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
   >
-  class MultiVarPolynomial
+  class Polynomial
   {
   public:
-    static_assert(D > 1, "MultiVarPolynomial: the dimension must be positive.");
+    inline static const int dim{1};
 
-    inline static const int dim{D};
-
-    using index_type = AllocatorOrContainer::value_type::first_type;
-    using coord_type = CoordType<R, dim>;
+    using Index = IntType;
+    using coord_type = R;
 
   private:
-    using IndexContainer = boost::container::flat_map<index_type, R, Comparer, AllocatorOrContainer>;
+    using IndexContainer = boost::container::flat_map<Index, R, Comparer, AllocatorOrContainer>;
 
   public:
     using key_type = IndexContainer::key_type;
@@ -67,42 +61,42 @@ namespace multivar_polynomial
     using const_reverse_iterator = IndexContainer::const_reverse_iterator;
 
 
-    explicit MultiVarPolynomial(const allocator_type& allocator) : index2value_(allocator)
+    explicit Polynomial(const allocator_type& allocator) : index2value_(allocator)
     {
       CheckSelfIndexes();
     }
 
-    explicit MultiVarPolynomial(const Comparer& comparer) : index2value_(comparer) { CheckSelfIndexes(); }
+    explicit Polynomial(const Comparer& comparer) : index2value_(comparer) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(const Comparer& comparer, const allocator_type& allocator)
+    Polynomial(const Comparer& comparer, const allocator_type& allocator)
      : index2value_(comparer, allocator) { CheckSelfIndexes(); }
 
     template<typename InputIterator>
-    MultiVarPolynomial(InputIterator s, InputIterator e) : index2value_(s, e) { CheckSelfIndexes(); }
+    Polynomial(InputIterator s, InputIterator e) : index2value_(s, e) { CheckSelfIndexes(); }
 
     template<typename InputIterator> 
-    explicit MultiVarPolynomial(InputIterator s, InputIterator e, const allocator_type& allocator)
+    explicit Polynomial(InputIterator s, InputIterator e, const allocator_type& allocator)
      : index2value_(s, e, allocator) { CheckSelfIndexes(); }
 
     template<typename InputIterator> 
-    explicit MultiVarPolynomial(InputIterator s, InputIterator e, const Comparer& c)
+    explicit Polynomial(InputIterator s, InputIterator e, const Comparer& c)
      : index2value_(s, e, c) { CheckSelfIndexes(); }
 
     template<typename InputIterator> 
-    explicit MultiVarPolynomial(InputIterator s, InputIterator e, const Comparer& c, const allocator_type& a)
+    explicit Polynomial(InputIterator s, InputIterator e, const Comparer& c, const allocator_type& a)
      : index2value_(s, e, c, a) { CheckSelfIndexes(); }
 
     template<typename InputIterator> 
-    explicit MultiVarPolynomial(boost::container::ordered_unique_range_t o, InputIterator s, InputIterator e)
+    explicit Polynomial(boost::container::ordered_unique_range_t o, InputIterator s, InputIterator e)
      : index2value_(o, s, e) { CheckSelfIndexes(); }
 
     template<typename InputIterator> 
-    explicit MultiVarPolynomial(
+    explicit Polynomial(
       boost::container::ordered_unique_range_t o, InputIterator s, InputIterator e, const Comparer& c
     ) : index2value_(o, s, e, c) { CheckSelfIndexes(); }
 
     template<typename InputIterator> 
-    explicit MultiVarPolynomial(
+    explicit Polynomial(
       boost::container::ordered_unique_range_t o,
       InputIterator s,
       InputIterator e, 
@@ -111,85 +105,77 @@ namespace multivar_polynomial
     ) : index2value_(o, s, e, c, a) { CheckSelfIndexes(); }
 
     template<typename InputIterator> 
-    explicit MultiVarPolynomial(
+    explicit Polynomial(
       boost::container::ordered_unique_range_t o,
       InputIterator s,
       InputIterator e, 
       const allocator_type& a
     ) : index2value_(o, s, e, a) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(std::initializer_list<value_type> l) : index2value_(l) { CheckSelfIndexes(); }
+    explicit Polynomial(std::initializer_list<value_type> l) : index2value_(l) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(std::initializer_list<value_type> l, const allocator_type& a)
+    explicit Polynomial(std::initializer_list<value_type> l, const allocator_type& a)
      : index2value_(l, a) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(std::initializer_list<value_type> l, const Comparer& c)
+    explicit Polynomial(std::initializer_list<value_type> l, const Comparer& c)
      : index2value_(l, c) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(std::initializer_list<value_type> l, const Comparer& c, const allocator_type& a)
+    explicit Polynomial(std::initializer_list<value_type> l, const Comparer& c, const allocator_type& a)
      : index2value_(l, c, a) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(boost::container::ordered_unique_range_t o, std::initializer_list<value_type> l)
+    explicit Polynomial(boost::container::ordered_unique_range_t o, std::initializer_list<value_type> l)
      : index2value_(o, l) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(
+    explicit Polynomial(
       boost::container::ordered_unique_range_t o,
       std::initializer_list<value_type> l,
       const Comparer& c
     ) : index2value_(o, l, c) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(
+    explicit Polynomial(
       boost::container::ordered_unique_range_t o,
       std::initializer_list<value_type> l,
       const Comparer& c,
       const allocator_type& a
     ) : index2value_(o, l, c, a) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(const MultiVarPolynomial& m, const allocator_type& a)
+    explicit Polynomial(const Polynomial& m, const allocator_type& a)
      : index2value_(m.index2value_, a) { CheckSelfIndexes(); }
 
-    explicit MultiVarPolynomial(MultiVarPolynomial&& m, const allocator_type& a)
+    explicit Polynomial(Polynomial&& m, const allocator_type& a)
      : index2value_(std::move(m.index2value_), a) { CheckSelfIndexes(); }
 
-    MultiVarPolynomial& operator=(std::initializer_list<value_type> l)
+    Polynomial& operator=(std::initializer_list<value_type> l)
     {
       index2value_ = l;
       CheckSelfIndexes();
       return *this;
     }
 
-    explicit MultiVarPolynomial(mapped_type r)
+    explicit Polynomial(mapped_type r)
     {
-      index2value_.at(index_type::Zero()) = r;
+      index2value_.at(0) = r;
     }
 
-    MultiVarPolynomial(){}
+    Polynomial(){}
 
-    MultiVarPolynomial(const MultiVarPolynomial& other) : index2value_(other.index2value_) {}
+    Polynomial(const Polynomial& other) : index2value_(other.index2value_) {}
 
-    MultiVarPolynomial& operator=(const MultiVarPolynomial& other)
+    Polynomial& operator=(const Polynomial& other)
     {
       index2value_ = other.index2value_;
       return *this;
     }
 
-    MultiVarPolynomial(MultiVarPolynomial&& other) : index2value_(std::move(other.index2value_)) {}
+    Polynomial(Polynomial&& other) : index2value_(std::move(other.index2value_)) {}
 
-    MultiVarPolynomial& operator=(MultiVarPolynomial&& other)
+    Polynomial& operator=(Polynomial&& other)
     {
       index2value_ = std::move(other.index2value_);
       return *this;
     }
 
-    virtual ~MultiVarPolynomial(){}
-
-    static void CheckAxis(std::size_t axis)
-    {
-      if (axis < 0 || axis >= dim)
-      {
-        throw std::runtime_error(fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim));
-      }
-    }
+    virtual ~Polynomial(){}
 
 
     allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
@@ -377,7 +363,7 @@ namespace multivar_polynomial
     size_type erase(const value_type& i_and_v) { return index2value_.erase(i_and_v); }
     iterator erase(const_iterator s, const_iterator e) { return index2value_.erase(s, e); }
 
-    void swap(MultiVarPolynomial& m) { index2value_.swap(m.index2value_); }
+    void swap(Polynomial& m) { index2value_.swap(m.index2value_); }
 
     void clear() noexcept { index2value_.clear(); }
 
@@ -453,11 +439,11 @@ namespace multivar_polynomial
     const_reference back() const { return *(index2value_.crbegin()); }
 
 
-    MultiVarPolynomial operator+() const { return *this; }
+    Polynomial operator+() const { return *this; }
 
-    MultiVarPolynomial operator-() const
+    Polynomial operator-() const
     {
-      auto m = MultiVarPolynomial(*this);
+      auto m = Polynomial(*this);
       for (auto& i_and_v : m)
       {
         auto& [i, v] = i_and_v;
@@ -466,7 +452,7 @@ namespace multivar_polynomial
       return m;
     }
 
-    MultiVarPolynomial& operator*=(mapped_type r)
+    Polynomial& operator*=(mapped_type r)
     {
       for(auto& i_and_v : index2value_)
       {
@@ -478,29 +464,29 @@ namespace multivar_polynomial
 
     // friend functions
     // TODO consider tolerance.
-    friend bool operator==(const MultiVarPolynomial& l, const MultiVarPolynomial& r)
+    friend bool operator==(const Polynomial& l, const Polynomial& r)
     {
       return l.index2value_ == r.index2value_;
     }
 
     // TODO consider tolerance.
-    friend bool operator!=(const MultiVarPolynomial& l, const MultiVarPolynomial& r)
+    friend bool operator!=(const Polynomial& l, const Polynomial& r)
     {
-      return !(l == r);
+      return l.index2value_ != r.index2value_;
     }
 
-    friend MultiVarPolynomial operator+(const MultiVarPolynomial& l, const MultiVarPolynomial& r)
+    friend Polynomial operator+(const Polynomial& l, const Polynomial& r)
     {
       auto comparer = l.key_comp();
-      auto sum = MultiVarPolynomial(comparer, l.get_allocator());
+      auto sum = Polynomial(comparer, l.get_allocator());
       sum.reserve(l.size() + r.size());
       auto l_it = l.begin();
       auto r_it = r.begin();
       // Like Merge sort algorithm, insert or sum data to sum.
       while(l_it != l.end() && r_it != r.end())
       {
-        const auto& [l_idx, l_v] = *l_it;
-        const auto& [r_idx, r_v] = *r_it;
+        auto [l_idx, l_v] = *l_it;
+        auto [r_idx, r_v] = *r_it;
         if(comparer(l_idx, r_idx))
         {
           sum.emplace_hint(sum.end(), *l_it);
@@ -532,18 +518,18 @@ namespace multivar_polynomial
       return sum;
     }
 
-    friend MultiVarPolynomial operator-(const MultiVarPolynomial& l, const MultiVarPolynomial& r)
+    friend Polynomial operator-(const Polynomial& l, const Polynomial& r)
     {
       auto comparer = l.key_comp();
-      auto sub = MultiVarPolynomial(comparer, l.get_allocator());
+      auto sub = Polynomial(comparer, l.get_allocator());
       sub.reserve(l.size() + r.size());
       auto l_it = l.begin();
       auto r_it = r.begin();
       // Like Merge sort algorithm, insert or subtract data to sub.
       while(l_it != l.end() && r_it != r.end())
       {
-        const auto& [l_idx, l_v] = *l_it;
-        const auto& [r_idx, r_v] = *r_it;
+        auto [l_idx, l_v] = *l_it;
+        auto [r_idx, r_v] = *r_it;
         if(comparer(l_idx, r_idx))
         {
           sub.emplace_hint(sub.end(), *l_it);
@@ -576,7 +562,7 @@ namespace multivar_polynomial
       return sub;
     }
 
-    friend MultiVarPolynomial operator*(const MultiVarPolynomial& l, const MultiVarPolynomial& r)
+    friend Polynomial operator*(const Polynomial& l, const Polynomial& r)
     {
       auto comparer = l.key_comp();
       auto mul = std::vector<value_type>();
@@ -601,8 +587,8 @@ namespace multivar_polynomial
         mul.end(),
         [](const value_type& l, const value_type& r) { return (l.first == r.first).all(); }
       );
-      // For simplicity, I make a MultiVarPolynomial now.
-      auto mp = MultiVarPolynomial(
+      // For simplicity, I make a Polynomial now.
+      auto mp = Polynomial(
         boost::container::ordered_unique_range_t(),
         mul.begin(),
         rm_begin,
@@ -618,25 +604,18 @@ namespace multivar_polynomial
       return mp;
     }
 
-    friend void swap(MultiVarPolynomial& l, MultiVarPolynomial& r)
+    friend void swap(Polynomial& l, Polynomial& r)
     {
       swap(l.index2value_, r.index2value_);
     }
 
   private:
-    void CheckIndex(const key_type& index) const
+    void CheckIndex(key_type index) const
     {
-      if ((index < index_type::Zero()).any())
+      if (index < 0)
       {
-        auto err_msg_stream = std::stringstream();
-        for (auto i = 0; i != index.size() - 1; ++i)
-        {
-          err_msg_stream << i << ", ";
-        }
-        err_msg_stream << index[index.size() - 1];
-
         throw std::runtime_error(
-          fmt::format("Each element of the index ({}) must be non-negative.", err_msg_stream.str())
+          fmt::format("The index ({}) must be non-negative.", index)
         );
       }
     }
@@ -660,35 +639,32 @@ namespace multivar_polynomial
       return iter_and_is_inserted;
     }
 
-    IndexContainer index2value_{{{0, 0}, 0}};
+    IndexContainer index2value_{{0, 0}};
   };
 
 
   template <
     class R,
     std::signed_integral IntType,
-    int Dim,
     class Comparer,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, Dim>, R>> 
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
   >
-  auto D(const MultiVarPolynomial<R, IntType, Dim, Comparer, AllocatorOrContainer>& p, std::size_t axis)
+  auto D(const Polynomial<R, IntType, Comparer, AllocatorOrContainer>& p)
   {
-    using MP = MultiVarPolynomial<R, IntType, Dim, Comparer, AllocatorOrContainer>;
-
-    MP::CheckAxis(axis);
+    using MP = Polynomial<R, IntType, Comparer, AllocatorOrContainer>;
 
     auto new_index2value_seq = typename MP::sequence_type(p.get_allocator());
     new_index2value_seq.reserve(p.size());
     for(auto index_and_value : p)
     {
       auto [index, value] = index_and_value;
-      if(index[axis] == 0)
+      if(index == 0)
       {
         continue;
       }
       else
       {
-        value *= index[axis]--;
+        value *= index--;
         new_index2value_seq.emplace_back(index, value);
       }
     }
@@ -715,77 +691,54 @@ namespace multivar_polynomial
   template <
     class R,
     std::signed_integral IntType,
-    int Dim,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, Dim>, R>> 
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
   >
-  auto D(
-    const MultiVarPolynomial<R, IntType, Dim, IndexComparer<IntType, Dim>, AllocatorOrContainer>& p,
-    std::size_t axis
-  )
+  auto D(Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>&& p)
   {
-    using MP = MultiVarPolynomial<R, IntType, Dim, IndexComparer<IntType, Dim>, AllocatorOrContainer>;
+    using MP = Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>;
 
-    MP::CheckAxis(axis);
-
-    auto new_index2value_seq = typename MP::sequence_type(p.get_allocator());
-    new_index2value_seq.reserve(p.size());
-    auto p_it = p.begin();
-    while(p_it != p.end())
+    auto index2value_seq = p.extract_sequence();
+    if (index2value_seq.back().first == 0)
     {
-      auto [index, value] = *p_it;
-      if(index[axis] == 0)
-      {
-        if (axis == MP::dim - 1)
-        {
-          ++p_it;
-        }
-        auto d_end_it = p.end();
-        for (std::size_t ith_axis = 0; ith_axis <= axis; ++ith_axis)
-        {
-          d_end_it = std::partition_point(
-            p_it,
-            d_end_it,
-            [ith_axis, &index](const typename MP::value_type& v){ return v.first[ith_axis] == index[ith_axis]; }
-          );
-        }
-        // Skip indexes which axis-th element is zero.
-        p_it = d_end_it;
-      }
-      else
-      {
-        value *= index[axis]--;
-        new_index2value_seq.emplace_back(index, value);
-        ++p_it;
-      }
+      index2value_seq.pop_back();
     }
-    return MP(
-      boost::container::ordered_unique_range_t(),
-      new_index2value_seq.begin(),
-      new_index2value_seq.end(),
-      p.key_comp(),
-      p.get_allocator()
-    );
+    for(auto& index_and_value : index2value_seq)
+    {
+      auto& [index, value] = index_and_value;
+      value *= index--;
+    }
+    p.adopt_sequence(boost::container::ordered_unique_range_t(), std::move(index2value_seq));
+    return p;
   }
 
 
   template <
     class R,
     std::signed_integral IntType,
-    int D,
-    class Comparer = IndexComparer<IntType, D>,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
   >
-  auto Integrate(MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>&& p, std::size_t axis)
+  auto D(const Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>& p)
   {
-    using MP = MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>;
+    using MP = Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>;
+    return D(MP(p));
+  }
 
-    MP::CheckAxis(axis);
+
+  template <
+    class R,
+    std::signed_integral IntType,
+    class Comparer = IndexComparer<IntType, 1>,
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, 1>, R>> 
+  >
+  auto Integrate(Polynomial<R, IntType, Comparer, AllocatorOrContainer>&& p)
+  {
+    using MP = Polynomial<R, IntType, Comparer, AllocatorOrContainer>;
 
     auto index2value = p.extract_sequence();
     for(auto& index_and_value : index2value)
     {
       auto& [index, value] = index_and_value;
-      value /= ++index[axis];
+      value /= ++index;
     }
     const auto& comparer = p.key_comp();
     std::sort(
@@ -802,103 +755,58 @@ namespace multivar_polynomial
   template <
     class R,
     std::signed_integral IntType,
-    int D,
-    class Comparer = IndexComparer<IntType, D>,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
+    class Comparer = IndexComparer<IntType, 1>,
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, 1>, R>> 
   >
-  auto Integrate(const MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>& p, std::size_t axis)
+  auto Integrate(const Polynomial<R, IntType, Comparer, AllocatorOrContainer>& p)
   {
-    return Integrate(MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>(p), axis);
+    return Integrate(Polynomial<R, IntType, Comparer, AllocatorOrContainer>(p));
   }
 
 
   template <
     class R,
     std::signed_integral IntType,
-    int D,
     class Comparer,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, 1>, R>> 
   >
   auto Of(
-    const MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>& p,
-    const typename MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>::coord_type& x
+    const Polynomial<R, IntType,  Comparer, AllocatorOrContainer>& p,
+    const typename Polynomial<R, IntType, Comparer, AllocatorOrContainer>::coord_type& x
   )
   {
-    using MP = MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>;
+    using MP = Polynomial<R, IntType, Comparer, AllocatorOrContainer>;
+
     typename MP::mapped_type sum = 0;
     for(const auto& index_and_value : p)
     {
       const auto& [index, value] = index_and_value;
-      sum += value * (x.array().pow(index.template cast<typename MP::mapped_type>())).prod();
+      sum += value * std::pow(x, index);
     }
     return sum;
   }
 
 
-  template <class Iterator, class Coord>
-  auto OfImpl(
-    Iterator begin,
-    Iterator end,
-    int dim,
-    std::size_t axis,
-    const Coord& x
-  )
-  {
-    assert(axis >= 0 && axis < dim);
-    if(axis == dim - 1)
-    {
-      auto [last_index, last_coeff] = *begin;
-      for(auto it = std::next(begin); it != end; ++it)
-      {
-        const auto& [next_index, next_coeff] = *it;
-        last_coeff *= std::pow(x[axis], last_index[axis] - next_index[axis]);
-        last_coeff += next_coeff;
-        last_index = next_index;
-      }
-      last_coeff *= x.pow(last_index.template cast<typename Coord::Scalar>()).prod();
-      return last_coeff;
-    }
-    else
-    {
-      auto sum = typename Iterator::value_type::second_type(0);
-      while(true)
-      {
-        const auto& [first_index, first_coeff] = *begin;
-        auto partition_point = std::partition_point(
-          begin,
-          end,
-          [axis, &first_index](const typename Iterator::value_type& pair)
-          {
-            return pair.first[axis] == first_index[axis];
-          }
-        );
-        const auto& [p_index, p_coeff] = *partition_point;
-        sum += OfImpl(begin, partition_point, dim, axis + 1, x);
-        if(partition_point == end)
-        {
-          // The calculation ends.
-          break;
-        }
-        begin = partition_point;
-      }
-      return sum;
-    }
-  }
-
-
   template <
     class R,
     std::signed_integral IntType,
-    int D,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, 1>, R>> 
   >
   auto Of(
-    const MultiVarPolynomial<R, IntType, D, IndexComparer<IntType, D>, AllocatorOrContainer>& p,
-    const typename MultiVarPolynomial<R, IntType, D, IndexComparer<IntType, D>, AllocatorOrContainer>::coord_type& x
+    const Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>& p,
+    const typename Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>::coord_type& x
   )
   {
-    using MP = MultiVarPolynomial<R, IntType, D, IndexComparer<IntType, D>, AllocatorOrContainer>;
-    return OfImpl(p.cbegin(), p.cend(), MP::dim, 0, x);
+    auto [last_index, last_coeff] = p.front();
+    for(auto it = std::next(p.cbegin()); it != p.cend(); ++it)
+    {
+      const auto& [next_index, next_coeff] = *it;
+      last_coeff *= std::pow(x, last_index - next_index);
+      last_coeff += next_coeff;
+      last_index = next_index;
+    }
+    last_coeff *= std::pow(x, last_index);
+    return last_coeff;
   }
 }
 

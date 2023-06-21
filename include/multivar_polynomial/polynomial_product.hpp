@@ -3,13 +3,13 @@
 
 
 #include "multivar_polynomial/type.hpp"
-#include "multivar_polynomial/multivar_polynomial.hpp"
 
 #include <array>
 #include <numeric>
 
 #include "boost/range/adaptor/indexed.hpp"
 #include "Eigen/Core"
+#include "fmt/core.h"
 
 
 namespace multivar_polynomial
