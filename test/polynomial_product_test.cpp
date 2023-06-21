@@ -105,3 +105,55 @@ BOOST_AUTO_TEST_CASE(polynomial_product_D, * utf::tolerance(tt::fpc::percent_tol
   }
 }
 
+
+BOOST_AUTO_TEST_CASE(polynomial_product_Integrate, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
+{
+  using Poly = multivar_polynomial::Polynomial<double, int>;
+  auto v = std::array<Poly, 2>({
+    Poly({
+      {0, 1},
+      {1, 2},
+      {2, 3}
+    }),
+    Poly({
+      {0, 4},
+      {1, 5}
+    })
+  });
+
+  auto pp = multivar_polynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
+  auto spp0 = multivar_polynomial::Integrate(pp, 0);
+  v = {
+    Poly({
+      {1, 1},
+      {2, 1},
+      {3, 1}
+    }),
+    Poly({
+      {0, 4},
+      {1, 5}
+    })
+  };
+  BOOST_TEST(v.size() == spp0.size());
+  for (std::size_t i = 0; i != v.size(); ++i)
+  {
+    BOOST_TEST(v[i] == spp0[i]);
+  }
+  auto spp1 = multivar_polynomial::Integrate(pp, 1);
+  v = {
+    Poly({
+      {0, 1},
+      {1, 2},
+      {2, 3}
+    }),
+    Poly({
+      {1, 4},
+      {2, 2.5}
+    })
+  };
+  BOOST_TEST(v.size() == spp1.size());
+  for (std::size_t i = 0; i != v.size(); ++i)
+  {
+    BOOST_TEST(v[i] == spp1[i]);
+  }
+}
