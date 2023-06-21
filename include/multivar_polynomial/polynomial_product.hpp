@@ -95,17 +95,17 @@ namespace multivar_polynomial
     PolynomialProduct& operator=(PolynomialProduct&&) = default;
     virtual ~PolynomialProduct() = default;
 
-    auto at(size_type n) { return polynomials_.at(n); }
-    auto at(size_type n) const { return polynomials_.at(n); }
+    value_type& at(size_type n) { return polynomials_.at(n); }
+    const value_type& at(size_type n) const { return polynomials_.at(n); }
 
-    auto operator[](size_type n) { return polynomials_[n]; }
-    auto operator[](size_type n) const { return polynomials_[n]; }
+    value_type& operator[](size_type n) { return polynomials_[n]; }
+    const value_type& operator[](size_type n) const { return polynomials_[n]; }
 
-    auto front() { return polynomials_.front(); }
-    auto front() const { return polynomials_.front(); }
+    reference front() { return polynomials_.front(); }
+    const_reference front() const { return polynomials_.front(); }
 
-    auto back() { return polynomials_.back(); }
-    auto back() const { return polynomials_.back(); }
+    reference back() { return polynomials_.back(); }
+    const_reference back() const { return polynomials_.back(); }
 
     iterator begin() noexcept { return polynomials_.begin(); }
     const_iterator begin() const noexcept  { return polynomials_.begin(); }
