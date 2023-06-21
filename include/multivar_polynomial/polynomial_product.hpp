@@ -3,25 +3,32 @@
 
 
 #include "multivar_polynomial/type.hpp"
+#include "multivar_polynomial/multivar_polynomial.hpp"
 
 #include <array>
 #include <numeric>
 
-#include "boost/math/tools/polynomial.hpp"
 #include "boost/range/adaptor/indexed.hpp"
 #include "Eigen/Core"
 
 
 namespace multivar_polynomial
 {
-  template <class R, std::size_t Dim>
+  template <class P, class R>
+  P MakeScalarPolynomial(R r)
+  {
+    return P(r);
+  }
+
+
+  template <class P, std::size_t Dim>
   class PolynomialProduct
   {
   public:
     inline static const std::size_t dim{Dim};
 
-    using polynomial_type = boost::math::tools::polynomial<R>;
-    using coord_type = Eigen::Vector<R, dim>;
+    using polynomial_type = P;
+    using coord_type = CoordType<typename polynomial_type::coord_type, dim>;
 
   private:
     using PolynomialContainer = std::array<polynomial_type, dim>;
@@ -44,20 +51,41 @@ namespace multivar_polynomial
     using value_type = PolynomialContainer::value_type;
 
 
-    PolynomialProduct() { this->fill(polynomial_type({1})); }
+    PolynomialProduct() { this->fill(MakeScalarPolynomial<polynomial_type>(1)); }
 
-    PolynomialProduct(std::initializer_list<polynomial_type> l)
+    template<typename InputIterator>
+    PolynomialProduct(InputIterator s, InputIterator e)
     {
+      if(std::distance(s, e) != polynomials_.size())
+      {
+        throw std::runtime_error(fmt::format(
+          "PolynomialProduct: The size of given initializer list must be equal to the dimension {}",
+          dim
+        ));
+      }
+      std::size_t i = 0;
+      for(auto it = s; it != e; ++it)
+      {
+        polynomials_[i] = *it;
+        ++i;
+      }
+    }
+
+    explicit PolynomialProduct(std::initializer_list<polynomial_type> l)
+    {
+      if(l.size() != polynomials_.size())
+      {
+        throw std::runtime_error(fmt::format(
+          "PolynomialProduct: The size of given initializer list must be equal to the dimension {}",
+          dim
+        ));
+      }
+
       for(const auto& indexed_p : l | boost::adaptors::indexed())
       {
         auto i = indexed_p.index();
         const auto& p = indexed_p.value();
         polynomials_[i] = p;
-      }
-      // Initialize the rest polynomials.
-      for(auto i = l.size(); i != dim; ++i)
-      {
-        polynomials_[i] = {1};
       }
     }
 
@@ -92,58 +120,83 @@ namespace multivar_polynomial
     const_reverse_iterator rend() const noexcept { return polynomials_.rend(); }
     
     const_iterator cbegin() const noexcept { return polynomials_.cbegin(); }
-    const_iterator cend() const noexcept { return polynomials_.rend(); }
+    const_iterator cend() const noexcept { return polynomials_.cend(); }
 
     const_reverse_iterator crbegin() const noexcept { return polynomials_.crbegin(); }
-    const_reverse_iterator crend() const noexcept { return polynomials_.crbegin(); }
+    const_reverse_iterator crend() const noexcept { return polynomials_.crend(); }
 
     bool empty() const noexcept { return polynomials_.empty(); }
     size_type size() const noexcept { return polynomials_.size(); }
     size_type max_size() const noexcept { return polynomials_.max_size(); }
 
     void fill(const polynomial_type& p) { polynomials_.fill(p); }
-    void swap(PolynomialContainer& other) { polynomials_.swap(other); }
+    void swap(PolynomialProduct& other) { polynomials_.swap(other.polynomials_); }
+
+    // TODO consider tolerance.
+    friend bool operator==(const PolynomialProduct& l, const PolynomialProduct& r)
+    {
+      for(std::size_t i = 0; i != dim; ++i)
+      {
+        if(l[i] != r[i])
+        {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // TODO consider tolerance.
+    friend bool operator!=(const PolynomialProduct& l, const PolynomialProduct& r)
+    {
+      return !(l == r);
+    }
+
+    friend PolynomialProduct operator*(const PolynomialProduct& l, const PolynomialProduct& r)
+    {
+      auto mul = PolynomialProduct();
+      for(std::size_t i = 0; i != dim; ++i)
+      {
+        mul[i] = l[i] * r[i];
+      }
+      return mul;
+    }
 
   private:
-    std::array<polynomial_type, Dim> polynomials_;
+    PolynomialContainer polynomials_;
   };
 
 
-  template <class T, class R, int Dim>
-  auto OfPPImpl(const T& indexed_p, const CoordType<R, Dim>& x)
+  template <class P, std::size_t Dim>
+  auto Of(
+    const PolynomialProduct<P, Dim>& pp,
+    const typename PolynomialProduct<P, Dim>::coord_type& x
+  )
   {
-    auto index = indexed_p.index();
-    auto p = indexed_p.value();
-    return p[x[index]];
+    auto mul = typename PolynomialProduct<P, Dim>::polynomial_type::mapped_type(1);
+    for(const auto& index_and_pp : pp | boost::adaptors::indexed())
+    {
+      auto index = index_and_pp.index();
+      const auto& p = index_and_pp.value();
+      mul *= Of(p, x[index]);
+    }
+    return mul;
   }
 
 
-  template <class R, std::size_t Dim>
-  auto Of(const PolynomialProduct<R, Dim>& pp, const typename PolynomialProduct<R, Dim>::coord_type& x)
+  template <class P, std::size_t Dim>
+  auto D(const PolynomialProduct<P, Dim>& p, std::size_t axis)
   {
-    auto indexed_pp = boost::adaptors::index(pp);
-    return std::reduce(
-      boost::begin(indexed_pp),
-      boost::end(indexed_pp),
-      [&x](const auto& p, const auto& q){ return OfPPImpl(p, x) * OfPPImpl(q, x);}
-    );
-  }
-
-
-  template <class R, std::size_t Dim>
-  auto D(const PolynomialProduct<R, Dim>& p, std::size_t axis)
-  {
-    auto q = PolynomialProduct<R, Dim>(p);
-    q[axis] = p.at(axis).prime();
+    auto q = PolynomialProduct<P, Dim>(p);
+    q.at(axis) = D(p.at(axis));
     return q;
   }
 
 
-  template <class R, std::size_t Dim>
-  auto Integral(const PolynomialProduct<R, Dim>& p, std::size_t axis)
+  template <class P, std::size_t Dim>
+  auto Integrate(const PolynomialProduct<P, Dim>& p, std::size_t axis)
   {
-    auto q = PolynomialProduct<R, Dim>(p);
-    q[axis] = p.at(axis).integrate();
+    auto q = PolynomialProduct<P, Dim>(p);
+    q.at(axis) = Integrate(p.at(axis));
     return q;
   }
 }
