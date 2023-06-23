@@ -13,7 +13,7 @@ namespace tt = boost::test_tools;
 
 BOOST_AUTO_TEST_CASE(multivar_polynomial_init, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  auto ans = std::vector<std::pair<Eigen::Vector2i, double>>();
+  auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans = {
     {{0, 0}, 1},
     {{1, 0}, 2},
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_init, * utf::tolerance(tt::fpc::percent
 
 BOOST_AUTO_TEST_CASE(multivar_polynomial_Of, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  auto ans = std::vector<std::pair<Eigen::Vector2i, double>>();
+  auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans = {
     {{0, 0}, 1},
     {{1, 0}, 2},
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_Of, * utf::tolerance(tt::fpc::percent_t
 
 BOOST_AUTO_TEST_CASE(multivar_polynomial_derivative, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  auto ans = std::vector<std::pair<Eigen::Vector2i, double>>();
+  auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans = {
     {{0, 0}, 1},
     {{1, 0}, 2},
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_derivative, * utf::tolerance(tt::fpc::p
 
 BOOST_AUTO_TEST_CASE(multivar_polynomial_integral, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  auto ans = std::vector<std::pair<Eigen::Vector2i, double>>();
+  auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans = {
     {{0, 0}, 1},
     {{1, 0}, 2},
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_integral, * utf::tolerance(tt::fpc::per
 
 BOOST_AUTO_TEST_CASE(multivar_polynomial_multiply, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  auto ans = std::vector<std::pair<Eigen::Vector2i, double>>();
+  auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans = {
     {{0, 0}, 1},
     {{1, 0}, 2},
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_multiply, * utf::tolerance(tt::fpc::per
 
 BOOST_AUTO_TEST_CASE(multivar_polynomial_sum, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  auto ans = std::vector<std::pair<Eigen::Vector2i, double>>();
+  auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans = {
     {{0, 0}, 1},
     {{1, 0}, 2},
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_sum, * utf::tolerance(tt::fpc::percent_
 
 BOOST_AUTO_TEST_CASE(multivar_polynomial_sub, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  auto ans = std::vector<std::pair<Eigen::Vector2i, double>>();
+  auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans = {
     {{0, 0}, 1},
     {{1, 0}, 2},
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_sub, * utf::tolerance(tt::fpc::percent_
 
 BOOST_AUTO_TEST_CASE(multivar_polynomial_default_value_check, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  auto ans = std::vector<std::pair<Eigen::Vector2i, double>>();
+  auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans = {
     {{0, 0}, 0},
   };

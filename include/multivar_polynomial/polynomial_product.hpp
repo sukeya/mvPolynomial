@@ -8,6 +8,8 @@
 #include <numeric>
 
 #include "boost/range/adaptor/indexed.hpp"
+#include "boost/tuple/tuple.hpp"
+#include "boost/iterator/zip_iterator.hpp"
 #include "Eigen/Core"
 #include "fmt/core.h"
 
@@ -63,12 +65,18 @@ namespace multivar_polynomial
           dim
         ));
       }
-      std::size_t i = 0;
-      for(auto it = s; it != e; ++it)
-      {
-        polynomials_[i] = *it;
-        ++i;
-      }
+      std::for_each(
+        boost::make_zip_iterator(
+          boost::make_tuple(s, polynomials_.begin())
+        ),
+        boost::make_zip_iterator(
+          boost::make_tuple(e, polynomials_.end())
+        ),
+        [](const auto& t)
+        {
+          boost::tuples::get<1>(t) = boost::tuples::get<0>(t);
+        }
+      );
     }
 
     explicit PolynomialProduct(std::initializer_list<polynomial_type> l)

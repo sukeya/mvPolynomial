@@ -25,11 +25,11 @@ namespace multivar_polynomial
   public:
     inline static const int dim{1};
 
-    using Index = IntType;
+    using index_type = IntType;
     using coord_type = R;
 
   private:
-    using IndexContainer = boost::container::flat_map<Index, R, Comparer, AllocatorOrContainer>;
+    using IndexContainer = boost::container::flat_map<index_type, R, Comparer, AllocatorOrContainer>;
 
   public:
     using key_type = IndexContainer::key_type;
@@ -157,25 +157,12 @@ namespace multivar_polynomial
       index2value_.at(0) = r;
     }
 
-    Polynomial(){}
-
-    Polynomial(const Polynomial& other) : index2value_(other.index2value_) {}
-
-    Polynomial& operator=(const Polynomial& other)
-    {
-      index2value_ = other.index2value_;
-      return *this;
-    }
-
-    Polynomial(Polynomial&& other) : index2value_(std::move(other.index2value_)) {}
-
-    Polynomial& operator=(Polynomial&& other)
-    {
-      index2value_ = std::move(other.index2value_);
-      return *this;
-    }
-
-    virtual ~Polynomial(){}
+    Polynomial() = default;
+    Polynomial(const Polynomial& other) = default;
+    Polynomial& operator=(const Polynomial& other) = default;
+    Polynomial(Polynomial&& other) = default;
+    Polynomial& operator=(Polynomial&& other) = default;
+    virtual ~Polynomial() = default;
 
 
     allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
@@ -215,6 +202,9 @@ namespace multivar_polynomial
 
     mapped_type& operator[](const key_type& index) { return index2value_[index]; }
     mapped_type& operator[](key_type&& index) { return index2value_[index]; }
+
+    const mapped_type& operator[](const key_type& index) const { return const_cast<Polynomial*>(this)->operator[](index); }
+    const mapped_type& operator[](key_type&& index) const { return const_cast<Polynomial*>(this)->operator[](index); }
 
     template<typename M> 
     std::pair<iterator, bool> insert_or_assign(const key_type& i, M&& m)

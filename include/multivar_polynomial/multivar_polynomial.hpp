@@ -27,7 +27,7 @@ namespace multivar_polynomial
   class MultiVarPolynomial
   {
   public:
-    static_assert(D > 1, "MultiVarPolynomial: the dimension must be positive.");
+    static_assert(D > 1, "MultiVarPolynomial: the dimension must be greater than 1.");
 
     inline static const int dim{D};
 
@@ -163,25 +163,13 @@ namespace multivar_polynomial
       index2value_.at(index_type::Zero()) = r;
     }
 
-    MultiVarPolynomial(){}
+    MultiVarPolynomial() = default;
+    MultiVarPolynomial(const MultiVarPolynomial& other) = default;
+    MultiVarPolynomial& operator=(const MultiVarPolynomial& other) = default;
+    MultiVarPolynomial(MultiVarPolynomial&& other) = default;
+    MultiVarPolynomial& operator=(MultiVarPolynomial&& other) = default;
+    virtual ~MultiVarPolynomial() = default;
 
-    MultiVarPolynomial(const MultiVarPolynomial& other) : index2value_(other.index2value_) {}
-
-    MultiVarPolynomial& operator=(const MultiVarPolynomial& other)
-    {
-      index2value_ = other.index2value_;
-      return *this;
-    }
-
-    MultiVarPolynomial(MultiVarPolynomial&& other) : index2value_(std::move(other.index2value_)) {}
-
-    MultiVarPolynomial& operator=(MultiVarPolynomial&& other)
-    {
-      index2value_ = std::move(other.index2value_);
-      return *this;
-    }
-
-    virtual ~MultiVarPolynomial(){}
 
     static void CheckAxis(std::size_t axis)
     {
@@ -229,6 +217,9 @@ namespace multivar_polynomial
 
     mapped_type& operator[](const key_type& index) { return index2value_[index]; }
     mapped_type& operator[](key_type&& index) { return index2value_[index]; }
+
+    const mapped_type& operator[](const key_type& index) const { return const_cast<MultiVarPolynomial*>(this)->operator[](index); }
+    const mapped_type& operator[](key_type&& index) const { return const_cast<MultiVarPolynomial*>(this)->operator[](index); }
 
     template<typename M> 
     std::pair<iterator, bool> insert_or_assign(const key_type& i, M&& m)
