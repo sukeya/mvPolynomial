@@ -233,9 +233,10 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_exact_of_init, * utf::tolerance(tt::fpc
   auto exact_of = multivar_polynomial::ExactOf<double, int, 3>(m);
   for (auto i = 0; i < ans.size(); ++i)
   {
-    const auto& p = exact_of.ref_polynomial();
+    const auto& p = exact_of.get_polynomial();
     BOOST_TEST(p[ans[i].first] == ans[i].second);
   }
+  /*
   auto ans2 = std::vector<std::pair<Eigen::Array2i, double>>();
   ans2 = {
     {{0, 0}, 0},
@@ -247,8 +248,8 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_exact_of_init, * utf::tolerance(tt::fpc
   };
   for (auto i = 0; i < ans2.size(); ++i)
   {
-    const auto& p = exact_of.projection_.ref_polynomial();
-    BOOST_TEST(p[ans2[i].first] == ans2[i].second);
+    const auto& p = exact_of.projection_.get_polynomial();
+    BOOST_TEST(p[ans2[i].first] == 0);
   }
   auto ans3 = std::vector<std::pair<int, double>>();
   ans3 = {
@@ -258,19 +259,18 @@ BOOST_AUTO_TEST_CASE(multivar_polynomial_exact_of_init, * utf::tolerance(tt::fpc
   };
   for (auto i = 0; i < ans3.size(); ++i)
   {
-    const auto& p = exact_of.projection_.projection_.ref_polynomial();
-    BOOST_TEST(p[ans3[i].first] == ans3[i].second);
+    const auto& p = exact_of.projection_.projection_.get_polynomial();
+    BOOST_TEST(p[ans3[i].first] == 0);
   }
+  */
   BOOST_TEST(exact_of({0, 0, 0}) == 1);
-  /*
   BOOST_TEST(exact_of({1, 0, 0}) == 1 + 2 + 5);
   BOOST_TEST(exact_of({2, 0, 0}) == 1 + 2 * 2 + 5 * 4);
   BOOST_TEST(exact_of({0, 1, 0}) == 1 + 3 + 6);
   BOOST_TEST(exact_of({0, 2, 0}) == 1 + 3 * 2 + 6 * 4);
   BOOST_TEST(exact_of({0, 0, 1}) == 1 + 4 + 7);
   BOOST_TEST(exact_of({0, 0, 2}) == 1 + 4 * 2 + 7 * 4);
-  BOOST_TEST(exact_of({1, 1, 0}) == 1 + 2 + 5 + 3 + 6);
-  BOOST_TEST(exact_of({0, 1, 1}) == 1 + 3 + 6 + 4 + 7);
-  BOOST_TEST(exact_of({1, 0, 1}) == 1 + 2 + 5 + 4 + 7);
-  */
+  BOOST_TEST(exact_of({1, 1, 0}) == 1 + 2 + 5 + 3 + 6 + 8);
+  BOOST_TEST(exact_of({0, 1, 1}) == 1 + 3 + 6 + 4 + 7 + 9);
+  BOOST_TEST(exact_of({1, 0, 1}) == 1 + 2 + 5 + 4 + 7 + 10);
 }

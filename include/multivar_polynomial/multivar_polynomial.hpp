@@ -19,7 +19,6 @@
 #include "Eigen/Core"
 #include "fmt/core.h"
 
-#include <iostream>
 
 namespace multivar_polynomial
 {
@@ -657,7 +656,7 @@ namespace multivar_polynomial
       return iter_and_is_inserted;
     }
 
-    IndexContainer index2value_{{{0, 0}, 0}};
+    IndexContainer index2value_{{index_type::Zero(), 0}};
   };
 
 
@@ -936,7 +935,7 @@ namespace multivar_polynomial
     class R,
     std::signed_integral IntType,
     int D,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>
   >
   class ExactOf
   {
@@ -973,12 +972,11 @@ namespace multivar_polynomial
     ExactOf& operator=(ExactOf&& other) = default;
     virtual ~ExactOf() = default;
 
-
     auto operator()(const typename polynomial_type::coord_type& x)
     {
       for(auto partition_it = partition_.begin(); partition_it != std::prev(partition_.end()); ++partition_it)
       {
-        projection_.get_polynomial_coeff(MakeSubIndex<IndexType>(partition_it->first)) = Calculate(
+        projection_.get_polynomial_coeff(MakeSubIndex<IndexType>((*partition_it)->first)) = Calculate(
           *partition_it,
           *(std::next(partition_it)),
           dim - 1,
@@ -1014,8 +1012,8 @@ namespace multivar_polynomial
       {
         projected_polynomial.emplace_hint(
           projected_polynomial.end(),
-          MakeSubIndex(polynomial_const_it->first),
-          polynomial_const_it->second
+          MakeSubIndex<IndexType>(polynomial_const_it->first),
+          0
         );
       }
       projection_.set_polynomial(std::move(projected_polynomial));
@@ -1025,7 +1023,7 @@ namespace multivar_polynomial
 
     auto move_polynomial() { return std::move(polynomial_); }
 
-  //private:
+  private:
     void MakePartitions(
       const polynomial_type& polynomial,
       std::array<partition_type, dim - 1>& partitions
@@ -1063,7 +1061,9 @@ namespace multivar_polynomial
             *(std::next(partition_it)),
             std::distance(partitions.begin(), it)
           );
+          it->pop_back();
         }
+        it->push_back(polynomial.cend());
       }
     }
 
@@ -1125,7 +1125,6 @@ namespace multivar_polynomial
     ExactOf<R, IntType, D - 1, projected_polynomial_alloc_type> projection_;
   };
 
-
   template <
     class R,
     std::signed_integral IntType,
@@ -1138,6 +1137,7 @@ namespace multivar_polynomial
 
     using alloc_traits = std::allocator_traits<AllocatorOrContainer>;
     using polynomial_type = DefaultMultiVarPolynomial<R, IntType, dim, AllocatorOrContainer>;
+    using partition_type = std::vector<typename polynomial_type::const_iterator>;
 
     using projected_polynomial_alloc_type = typename alloc_traits::rebind_alloc<std::pair<IntType, R>>;
     using projected_polynomial_type = Polynomial<
@@ -1147,14 +1147,7 @@ namespace multivar_polynomial
       projected_polynomial_alloc_type
     >;
 
-    explicit ExactOf(polynomial_type&& p) : polynomial_(std::move(p))
-    {
-      auto projected_p = projected_polynomial_type();
-      projected_p.clear();
-      ConstructFromExtendedPolynomial(projected_p, polynomial_.cbegin(), polynomial_.cend(), 0);
-      partitions_.push_back(polynomial_.cend());
-      projection_ = decltype(projection_)(std::move(projected_p));
-    }
+    explicit ExactOf(polynomial_type&& p) { set_polynomial(std::move(p)); }
 
     explicit ExactOf(const polynomial_type& p) : ExactOf(polynomial_type(p)) {}
 
@@ -1168,84 +1161,131 @@ namespace multivar_polynomial
 
     auto operator()(const typename polynomial_type::coord_type& x)
     {
-      std::for_each(
-        boost::make_zip_iterator(
-          boost::make_tuple(projection_.ref_polynomial().begin(), partitions_.cbegin())
-        ),
-        boost::make_zip_iterator(
-          boost::make_tuple(projection_.ref_polynomial().end(), std::prev(partitions_.cend()))
-        ),
-        [&x](const auto& t)
-        {
-          auto cbegin = boost::tuples::get<1>(t);
-          auto cend = std::next(cbegin);
-          auto axis = dim - 1;
-          auto [last_index, last_coeff] = *cbegin;
-          for(auto it = std::next(cbegin); it != cend; ++it)
-          {
-            const auto& [next_index, next_coeff] = *it;
-            last_coeff *= std::pow(x[axis], last_index[axis] - next_index[axis]);
-            last_coeff += next_coeff;
-            last_index = next_index;
-          }
-          last_coeff *= x.pow(last_index.template cast<typename polynomial_type::coord_type::Scalar>()).prod();
-
-          auto& [index, value] = boost::tuples::get<0>(t);
-          value = last_coeff;
-        }
-      );
+      for(auto partition_it = partition_.begin(); partition_it != std::prev(partition_.end()); ++partition_it)
+      {
+        projection_.get_polynomial_coeff((*partition_it)->first[0]) = Calculate(
+          *partition_it,
+          *(std::next(partition_it)),
+          dim - 1,
+          x
+        );
+      }
       return projection_(x[0]);
     }
 
-    auto& ref_polynomial() { return polynomial_; }
-    const auto& ref_polynomial() const { return polynomial_; }
+    const auto& get_polynomial() const { return polynomial_; }
 
-    void ConstructFromExtendedPolynomial(
-      projected_polynomial_type& p,
-      typename polynomial_type::const_iterator cbegin,
-      typename polynomial_type::const_iterator cend,
-      std::size_t axis
+    auto& get_polynomial_coeff(const typename polynomial_type::index_type& x) { return polynomial_[x]; }
+
+    void set_polynomial(polynomial_type&& p)
+    {
+      polynomial_ = std::move(p);
+
+      // Make a partition from polynomial_.
+      std::array<partition_type, dim - 1> partitions;
+      MakePartitions(polynomial_, partitions);
+      partition_ = partitions.back();
+
+      // Make a projected polynomial.
+      auto projected_polynomial = projected_polynomial_type();
+      projected_polynomial.clear();
+      for(
+        auto polynomial_const_it
+        : boost::sub_range<decltype(partition_)>(
+          partition_.begin(),
+          std::prev(partition_.end())
+        )
+      )
+      {
+        projected_polynomial.emplace_hint(
+          projected_polynomial.end(),
+          polynomial_const_it->first[0],
+          polynomial_const_it->second
+        );
+      }
+      projection_.set_polynomial(std::move(projected_polynomial));
+    }
+
+    void set_polynomial(const polynomial_type& p) { set_polynomial(polynomial_type(p)); }
+
+    auto move_polynomial() { return std::move(polynomial_); }
+
+  private:
+    void MakePartitions(
+      const polynomial_type& polynomial,
+      std::array<partition_type, dim - 1>& partitions
     )
     {
-      using Iterator = typename polynomial_type::const_iterator;
+      // Make a partition from the index at 0 of p.
+      // example: 
+      //   index:
+      //   0:  1 1 1 1 2 2 2 2
+      //   1:  2 2 3 3 1 1 2 2
+      //   partition:
+      //   0:  0       1      2(end)
+      ConstructPartition(
+        partitions[0],
+        polynomial.cbegin(),
+        polynomial.cend(),
+        0
+      );
+    }
 
-      if(axis == dim - 1)
+    void ConstructPartition(
+      partition_type& partition,
+      typename partition_type::value_type cbegin,
+      typename partition_type::value_type cend,
+      int axis
+    )
+    {
+      while(true)
       {
-        using projected_index_type = projected_polynomial_type::index_type;
-
-        partitions_.push_back(cbegin);
-
-        auto projected_index = (cbegin->first)[0];
-        polynomial_.emplace_hint(polynomial_.end(), projected_index, 0);
-      }
-      else
-      {
-        while(true)
-        {
-          const auto& [first_index, first_coeff] = *cbegin;
-          auto partition_point = std::partition_point(
-            cbegin,
-            cend,
-            [axis, &first_index](const typename Iterator::value_type& pair)
-            {
-              return pair.first[axis] == first_index[axis];
-            }
-          );
-          const auto& [p_index, p_coeff] = *partition_point;
-          // Construct recurcively.
-          ConstructFromExtendedPolynomial(p, cbegin, partition_point, axis + 1);
-          if(partition_point == cend)
+        partition.push_back(cbegin);
+        const auto& [first_index, _] = *cbegin;
+        auto partition_point = std::partition_point(
+          cbegin,
+          cend,
+          [axis, &first_index](const typename decltype(cbegin)::value_type& pair)
           {
-            // The calculation ends.
-            break;
+            return pair.first[axis] == first_index[axis];
           }
-          cbegin = partition_point;
+        );
+        if(partition_point == cend)
+        {
+          partition.push_back(cend);
+          // The calculation ends.
+          break;
         }
+        cbegin = partition_point;
       }
     }
 
+    template <class Iterator>
+    auto Calculate(
+      Iterator cbegin,
+      Iterator cend,
+      int axis,
+      const typename polynomial_type::coord_type& x
+    ) const
+    {
+      auto [last_index, last_coeff] = *cbegin;
+      std::for_each(
+        std::next(cbegin),
+        cend,
+        [&last_coeff, &last_index, &x, axis](const typename polynomial_type::value_type& i_and_c)
+        {
+          const auto& [next_index, next_coeff] = i_and_c;
+          last_coeff *= std::pow(x[axis], last_index[axis] - next_index[axis]);
+          last_coeff += next_coeff;
+          last_index = next_index;
+        }
+      );
+      last_coeff *= std::pow(x[axis], last_index[axis]);
+      return last_coeff;
+    }
+
     polynomial_type polynomial_;
-    std::vector<typename polynomial_type::const_iterator> partitions_;
+    partition_type partition_;
     ExactOf<R, IntType, 1, projected_polynomial_alloc_type> projection_;
   };
 
@@ -1263,9 +1303,9 @@ namespace multivar_polynomial
     using alloc_traits = std::allocator_traits<AllocatorOrContainer>;
     using polynomial_type = Polynomial<R, IntType, IndexComparer<IntType, dim>, AllocatorOrContainer>;
 
-    explicit ExactOf(polynomial_type&& p) : polynomial_(std::move(p)) {}
+    explicit ExactOf(polynomial_type&& p) { set_polynomial(std::move(p)); }
 
-    explicit ExactOf(const polynomial_type& p) : polynomial_(p) {}
+    explicit ExactOf(const polynomial_type& p) : ExactOf(polynomial_type(p)) {}
 
     ExactOf() = default;
     ExactOf(const ExactOf& other) = default;
@@ -1275,25 +1315,37 @@ namespace multivar_polynomial
     virtual ~ExactOf() = default;
 
 
-    auto operator()(const typename polynomial_type::coord_type& x) const
+    auto operator()(typename polynomial_type::coord_type x) const
     {
       auto cbegin = polynomial_.cbegin();
       auto cend = polynomial_.cend();
       auto [last_index, last_coeff] = *cbegin;
-      for(auto it = std::next(cbegin); it != cend; ++it)
-      {
-        const auto& [next_index, next_coeff] = *it;
-        last_coeff *= std::pow(x, last_index - next_index);
-        last_coeff += next_coeff;
-        last_index = next_index;
-      }
+      std::for_each(
+        std::next(cbegin),
+        cend,
+        [&last_coeff, &last_index, x](const typename polynomial_type::value_type& i_and_c)
+        {
+          const auto& [next_index, next_coeff] = i_and_c;
+          last_coeff *= std::pow(x, last_index - next_index);
+          last_coeff += next_coeff;
+          last_index = next_index;
+        }
+      );
       last_coeff *= std::pow(x, last_index);
       return last_coeff;
     }
 
-    auto& ref_polynomial() { return polynomial_; }
-    const auto& ref_polynomial() const { return polynomial_; }
+    const auto& get_polynomial() const { return polynomial_; }
 
+    auto& get_polynomial_coeff(typename polynomial_type::index_type x) { return polynomial_[x]; }
+
+    void set_polynomial(polynomial_type&& p) { polynomial_ = std::move(p); }
+
+    void set_polynomial(const polynomial_type& p) { set_polynomial(polynomial_type(p)); }
+
+    auto move_polynomial() { return std::move(polynomial_); }
+
+  private:
     polynomial_type polynomial_;
   };
 }
