@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.25.2)
 
-# Set vcpkg toolchain.
-set(
-    CMAKE_TOOLCHAIN_FILE
-    "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-    CACHE STRING "Vcpkg toolchain file"
-)
+option(use_test "use test" OFF)
+
+if(use_test)
+  # Set vcpkg toolchain.
+  set(
+      CMAKE_TOOLCHAIN_FILE
+      "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      CACHE STRING "Vcpkg toolchain file"
+  )
+endif()
 
 project(multivar_polynomial VERSION 0.1.0 LANGUAGES CXX)
 
@@ -54,7 +58,11 @@ target_link_libraries(
     multivar_polynomial_compiler_flags
 )
 
-add_subdirectory(test)
+
+if(use_test)
+  add_subdirectory(test)
+endif()
+
 
 install(
   TARGETS
