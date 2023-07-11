@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.25.2)
 
-option(use_test "use test" OFF)
+option(USE_TEST "use test" OFF)
 
-if(use_test)
+if(USE_TEST)
   # Set vcpkg toolchain.
   set(
       CMAKE_TOOLCHAIN_FILE
@@ -59,7 +59,7 @@ target_link_libraries(
 )
 
 
-if(use_test)
+if(USE_TEST)
   add_subdirectory(test)
 endif()
 
