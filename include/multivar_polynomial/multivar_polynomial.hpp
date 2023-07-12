@@ -23,8 +23,8 @@
 namespace multivar_polynomial
 {
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     int D,
     class Comparer = IndexComparer<IntType, D>,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
@@ -661,15 +661,24 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
+    int D,
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
+  >
+  using DefaultMultiVarPolynomial = MultiVarPolynomial<IntType, R, D, IndexComparer<IntType, D>, AllocatorOrContainer>;
+
+
+  template <
+    std::signed_integral IntType,
+    class R,
     int Dim,
     class Comparer,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, Dim>, R>> 
   >
-  auto D(const MultiVarPolynomial<R, IntType, Dim, Comparer, AllocatorOrContainer>& p, std::size_t axis)
+  auto D(const MultiVarPolynomial<IntType, R, Dim, Comparer, AllocatorOrContainer>& p, std::size_t axis)
   {
-    using MP = MultiVarPolynomial<R, IntType, Dim, Comparer, AllocatorOrContainer>;
+    using MP = MultiVarPolynomial<IntType, R, Dim, Comparer, AllocatorOrContainer>;
 
     MP::CheckAxis(axis);
 
@@ -709,17 +718,17 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     int Dim,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, Dim>, R>> 
   >
   auto D(
-    const MultiVarPolynomial<R, IntType, Dim, IndexComparer<IntType, Dim>, AllocatorOrContainer>& p,
+    const DefaultMultiVarPolynomial<IntType, R, Dim, AllocatorOrContainer>& p,
     std::size_t axis
   )
   {
-    using MP = MultiVarPolynomial<R, IntType, Dim, IndexComparer<IntType, Dim>, AllocatorOrContainer>;
+    using MP = DefaultMultiVarPolynomial<IntType, R, Dim, AllocatorOrContainer>;
 
     MP::CheckAxis(axis);
 
@@ -765,15 +774,15 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     int D,
     class Comparer = IndexComparer<IntType, D>,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
   >
-  auto Integrate(MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>&& p, std::size_t axis)
+  auto Integrate(MultiVarPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>&& p, std::size_t axis)
   {
-    using MP = MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>;
+    using MP = MultiVarPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>;
 
     MP::CheckAxis(axis);
 
@@ -796,31 +805,31 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     int D,
     class Comparer = IndexComparer<IntType, D>,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
   >
-  auto Integrate(const MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>& p, std::size_t axis)
+  auto Integrate(const MultiVarPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>& p, std::size_t axis)
   {
-    return Integrate(MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>(p), axis);
+    return Integrate(MultiVarPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>(p), axis);
   }
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     int D,
     class Comparer,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
   >
   auto Of(
-    const MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>& p,
-    const typename MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>::coord_type& x
+    const MultiVarPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>& p,
+    const typename MultiVarPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>::coord_type& x
   )
   {
-    using MP = MultiVarPolynomial<R, IntType, D, Comparer, AllocatorOrContainer>;
+    using MP = MultiVarPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>;
     typename MP::mapped_type sum = 0;
     for(const auto& index_and_value : p)
     {
@@ -883,30 +892,21 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     int D,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
   >
   auto Of(
-    const MultiVarPolynomial<R, IntType, D, IndexComparer<IntType, D>, AllocatorOrContainer>& p,
-    const typename MultiVarPolynomial<R, IntType, D, IndexComparer<IntType, D>, AllocatorOrContainer>::coord_type& x
+    const DefaultMultiVarPolynomial<IntType, R, D, AllocatorOrContainer>& p,
+    const typename DefaultMultiVarPolynomial<IntType, R, D, AllocatorOrContainer>::coord_type& x
   )
   {
-    using MP = MultiVarPolynomial<R, IntType, D, IndexComparer<IntType, D>, AllocatorOrContainer>;
+    using MP = DefaultMultiVarPolynomial<IntType, R, D, AllocatorOrContainer>;
     return OfImpl(p.cbegin(), p.cend(), MP::dim, 0, x);
   }
 
   
-  template <
-    class R,
-    std::signed_integral IntType,
-    int D,
-    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>> 
-  >
-  using DefaultMultiVarPolynomial = MultiVarPolynomial<R, IntType, D, IndexComparer<IntType, D>, AllocatorOrContainer>;
-
-
   template <
     template <class, int> class Array,
     class IntType,
@@ -932,8 +932,8 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     int D,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>
   >
@@ -945,7 +945,7 @@ namespace multivar_polynomial
     static const int dim{D};
 
     using alloc_traits = std::allocator_traits<AllocatorOrContainer>;
-    using polynomial_type = DefaultMultiVarPolynomial<R, IntType, dim, AllocatorOrContainer>;
+    using polynomial_type = DefaultMultiVarPolynomial<IntType, R, dim, AllocatorOrContainer>;
     using partition_type = std::vector<typename polynomial_type::const_iterator>;
 
     using projected_polynomial_alloc_type = typename alloc_traits::rebind_alloc<
@@ -955,8 +955,8 @@ namespace multivar_polynomial
       >
     >;
     using projected_polynomial_type = DefaultMultiVarPolynomial<
-      R,
       IntType,
+      R,
       dim - 1,
       projected_polynomial_alloc_type
     >;
@@ -1122,28 +1122,27 @@ namespace multivar_polynomial
 
     polynomial_type polynomial_;
     partition_type partition_;
-    ExactOf<R, IntType, D - 1, projected_polynomial_alloc_type> projection_;
+    ExactOf<IntType, R, D - 1, projected_polynomial_alloc_type> projection_;
   };
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     class AllocatorOrContainer
   >
-  class ExactOf<R, IntType, 2, AllocatorOrContainer>
+  class ExactOf<IntType, R, 2, AllocatorOrContainer>
   {
   public:
     static const int dim{2};
 
     using alloc_traits = std::allocator_traits<AllocatorOrContainer>;
-    using polynomial_type = DefaultMultiVarPolynomial<R, IntType, dim, AllocatorOrContainer>;
+    using polynomial_type = DefaultMultiVarPolynomial<IntType, R, dim, AllocatorOrContainer>;
     using partition_type = std::vector<typename polynomial_type::const_iterator>;
 
     using projected_polynomial_alloc_type = typename alloc_traits::rebind_alloc<std::pair<IntType, R>>;
-    using projected_polynomial_type = Polynomial<
-      R,
+    using projected_polynomial_type = DefaultPolynomial<
       IntType,
-      IndexComparer<IntType, dim - 1>,
+      R,
       projected_polynomial_alloc_type
     >;
 
@@ -1286,22 +1285,22 @@ namespace multivar_polynomial
 
     polynomial_type polynomial_;
     partition_type partition_;
-    ExactOf<R, IntType, 1, projected_polynomial_alloc_type> projection_;
+    ExactOf<IntType, R, 1, projected_polynomial_alloc_type> projection_;
   };
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     class AllocatorOrContainer
   >
-  class ExactOf<R, IntType, 1, AllocatorOrContainer>
+  class ExactOf<IntType, R, 1, AllocatorOrContainer>
   {
   public:
     static const int dim{1};
 
     using alloc_traits = std::allocator_traits<AllocatorOrContainer>;
-    using polynomial_type = Polynomial<R, IntType, IndexComparer<IntType, dim>, AllocatorOrContainer>;
+    using polynomial_type = Polynomial<IntType, R, IndexComparer<IntType, dim>, AllocatorOrContainer>;
 
     explicit ExactOf(polynomial_type&& p) { set_polynomial(std::move(p)); }
 

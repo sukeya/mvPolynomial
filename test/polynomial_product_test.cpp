@@ -12,9 +12,11 @@ namespace utf = boost::unit_test;
 namespace tt = boost::test_tools;
 
 
+using Poly = multivar_polynomial::Polynomial<int, double>;
+
+
 BOOST_AUTO_TEST_CASE(polynomial_product_init, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  using Poly = multivar_polynomial::Polynomial<double, int>;
   auto v = std::array<Poly, 2>({
     Poly({
       {0, 1},
@@ -37,7 +39,6 @@ BOOST_AUTO_TEST_CASE(polynomial_product_init, * utf::tolerance(tt::fpc::percent_
 
 BOOST_AUTO_TEST_CASE(polynomial_product_Of, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  using Poly = multivar_polynomial::Polynomial<double, int>;
   auto v = std::array<Poly, 2>({
     Poly({
       {0, 1},
@@ -57,7 +58,6 @@ BOOST_AUTO_TEST_CASE(polynomial_product_Of, * utf::tolerance(tt::fpc::percent_to
 
 BOOST_AUTO_TEST_CASE(polynomial_product_D, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  using Poly = multivar_polynomial::Polynomial<double, int>;
   auto v = std::array<Poly, 2>({
     Poly({
       {0, 1},
@@ -108,7 +108,6 @@ BOOST_AUTO_TEST_CASE(polynomial_product_D, * utf::tolerance(tt::fpc::percent_tol
 
 BOOST_AUTO_TEST_CASE(polynomial_product_Integrate, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
-  using Poly = multivar_polynomial::Polynomial<double, int>;
   auto v = std::array<Poly, 2>({
     Poly({
       {0, 1},

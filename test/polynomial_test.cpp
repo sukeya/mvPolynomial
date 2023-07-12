@@ -10,6 +10,8 @@
 namespace utf = boost::unit_test;
 namespace tt = boost::test_tools;
 
+using Poly = multivar_polynomial::Polynomial<int, double>;
+
 
 BOOST_AUTO_TEST_CASE(polynomial_init, * utf::tolerance(tt::fpc::percent_tolerance(1e-10)))
 {
@@ -20,7 +22,7 @@ BOOST_AUTO_TEST_CASE(polynomial_init, * utf::tolerance(tt::fpc::percent_toleranc
     {2, 3}
   };
 
-  auto m = multivar_polynomial::Polynomial<double, int>(ans.begin(), ans.end());
+  auto m = Poly(ans.begin(), ans.end());
   for (auto i = 0; i < ans.size(); ++i)
   {
     BOOST_TEST(m[ans[i].first] == ans[i].second);
@@ -37,7 +39,7 @@ BOOST_AUTO_TEST_CASE(polynomial_Of, * utf::tolerance(tt::fpc::percent_tolerance(
     {2, 3}
   };
 
-  auto m = multivar_polynomial::Polynomial<double, int>(ans.begin(), ans.end());
+  auto m = Poly(ans.begin(), ans.end());
   BOOST_TEST(Of(m, 0) == 1);
   BOOST_TEST(Of(m, 2) == 17);
 }
@@ -51,7 +53,7 @@ BOOST_AUTO_TEST_CASE(polynomial_derivative, * utf::tolerance(tt::fpc::percent_to
     {1, 2},
     {2, 3}
   };
-  auto m = multivar_polynomial::Polynomial<double, int>(ans.begin(), ans.end());
+  auto m = Poly(ans.begin(), ans.end());
   ans = {
     {0, 2},
     {1, 6}
@@ -72,7 +74,7 @@ BOOST_AUTO_TEST_CASE(polynomial_integral, * utf::tolerance(tt::fpc::percent_tole
     {1, 2},
     {2, 3}
   };
-  auto m = multivar_polynomial::Polynomial<double, int>(ans.begin(), ans.end());
+  auto m = Poly(ans.begin(), ans.end());
   ans = {
     {1, 1},
     {2, 1},

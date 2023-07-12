@@ -15,8 +15,8 @@
 namespace multivar_polynomial
 {
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     class Comparer = IndexComparer<IntType, 1>,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
   >
@@ -634,14 +634,22 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
+    class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
+  >
+  using DefaultPolynomial = Polynomial<IntType, R, IndexComparer<IntType, 1>, AllocatorOrContainer>;
+
+
+  template <
+    std::signed_integral IntType,
+    class R,
     class Comparer,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
   >
-  auto D(const Polynomial<R, IntType, Comparer, AllocatorOrContainer>& p)
+  auto D(const Polynomial<IntType, R, Comparer, AllocatorOrContainer>& p)
   {
-    using MP = Polynomial<R, IntType, Comparer, AllocatorOrContainer>;
+    using MP = Polynomial<IntType, R, Comparer, AllocatorOrContainer>;
 
     auto new_index2value_seq = typename MP::sequence_type(p.get_allocator());
     new_index2value_seq.reserve(p.size());
@@ -679,13 +687,13 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
   >
-  auto D(Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>&& p)
+  auto D(DefaultPolynomial<IntType, R, AllocatorOrContainer>&& p)
   {
-    using MP = Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>;
+    using MP = DefaultPolynomial<IntType, R, AllocatorOrContainer>;
 
     auto index2value_seq = p.extract_sequence();
     if (index2value_seq.back().first == 0)
@@ -707,22 +715,22 @@ namespace multivar_polynomial
     std::signed_integral IntType,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IntType, R>> 
   >
-  auto D(const Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>& p)
+  auto D(const DefaultPolynomial<IntType, R, AllocatorOrContainer>& p)
   {
-    using MP = Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>;
+    using MP = DefaultPolynomial<IntType, R, AllocatorOrContainer>;
     return D(MP(p));
   }
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     class Comparer = IndexComparer<IntType, 1>,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, 1>, R>> 
   >
-  auto Integrate(Polynomial<R, IntType, Comparer, AllocatorOrContainer>&& p)
+  auto Integrate(Polynomial<IntType, R, Comparer, AllocatorOrContainer>&& p)
   {
-    using MP = Polynomial<R, IntType, Comparer, AllocatorOrContainer>;
+    using MP = Polynomial<IntType, R, Comparer, AllocatorOrContainer>;
 
     auto index2value = p.extract_sequence();
     for(auto& index_and_value : index2value)
@@ -743,29 +751,29 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     class Comparer = IndexComparer<IntType, 1>,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, 1>, R>> 
   >
-  auto Integrate(const Polynomial<R, IntType, Comparer, AllocatorOrContainer>& p)
+  auto Integrate(const Polynomial<IntType, R, Comparer, AllocatorOrContainer>& p)
   {
-    return Integrate(Polynomial<R, IntType, Comparer, AllocatorOrContainer>(p));
+    return Integrate(Polynomial<IntType, R, Comparer, AllocatorOrContainer>(p));
   }
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     class Comparer,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, 1>, R>> 
   >
   auto Of(
-    const Polynomial<R, IntType,  Comparer, AllocatorOrContainer>& p,
-    const typename Polynomial<R, IntType, Comparer, AllocatorOrContainer>::coord_type& x
+    const Polynomial<IntType, R,  Comparer, AllocatorOrContainer>& p,
+    const typename Polynomial<IntType, R, Comparer, AllocatorOrContainer>::coord_type& x
   )
   {
-    using MP = Polynomial<R, IntType, Comparer, AllocatorOrContainer>;
+    using MP = Polynomial<IntType, R, Comparer, AllocatorOrContainer>;
 
     typename MP::mapped_type sum = 0;
     for(const auto& index_and_value : p)
@@ -778,13 +786,13 @@ namespace multivar_polynomial
 
 
   template <
-    class R,
     std::signed_integral IntType,
+    class R,
     class AllocatorOrContainer = boost::container::new_allocator<std::pair<IndexType<IntType, 1>, R>> 
   >
   auto Of(
-    const Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>& p,
-    const typename Polynomial<R, IntType, IndexComparer<IntType, 1>, AllocatorOrContainer>::coord_type& x
+    const DefaultPolynomial<IntType, R, AllocatorOrContainer>& p,
+    const typename DefaultPolynomial<IntType, R, AllocatorOrContainer>::coord_type& x
   )
   {
     auto [last_index, last_coeff] = p.front();
