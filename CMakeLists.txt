@@ -35,9 +35,8 @@ add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(
   ${PROJECT_NAME}
   INTERFACE
-    $<BUILD_INTERFACE:${extra_headers}>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+    ${extra_headers}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_link_libraries(
   ${PROJECT_NAME}
@@ -46,70 +45,4 @@ target_link_libraries(
     multivar_polynomial_compiler_flags
 )
 
-
-if(USE_TEST)
-  add_subdirectory(test)
-endif()
-
-
-install(
-  TARGETS
-    ${PROJECT_NAME}
-    multivar_polynomial_compiler_flags
-  EXPORT
-    multivar_polynomial_targets
-  DESTINATION
-    lib
-)
-
-install(
-  FILES
-    include/multivar_polynomial/multivar_polynomial.hpp
-    include/multivar_polynomial/polynomial_product.hpp
-    include/multivar_polynomial/polynomial.hpp
-    include/multivar_polynomial/index_comparer.hpp
-  DESTINATION
-    include/multivar_polynomial
-)
-
-install(
-  EXPORT
-    multivar_polynomial_targets
-  FILE
-    multivar_polynomial_targets.cmake
-  DESTINATION
-    lib/cmake/multivar_polynomial
-)
-
-include(CMakePackageConfigHelpers)
-# generate the config file that includes the exports
-configure_package_config_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
-  "${CMAKE_CURRENT_BINARY_DIR}/multivar_polynomial-config.cmake"
-  INSTALL_DESTINATION "lib/cmake/multivar_polynomial"
-  NO_SET_AND_CHECK_MACRO
-  NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/multivar_polynomial-config-version.cmake"
-  VERSION "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}"
-  COMPATIBILITY SameMinorVersion
-)
-install(
-  FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/multivar_polynomial-config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/multivar_polynomial-config-version.cmake
-  DESTINATION
-    lib/cmake/multivar_polynomial
-)
-export(
-  EXPORT multivar_polynomial_targets
-  FILE "${CMAKE_CURRENT_BINARY_DIR}/multivar_polynomial_targets.cmake"
-)
-
-include(InstallRequiredSystemLibraries)
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
-set(CPACK_PACKAGE_VERSION_MAJOR "${CMAKE_PROJECT_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${CMAKE_PROJECT_VERSION_MINOR}")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-include(CPack)
+add_subdirectory(test)
