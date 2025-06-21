@@ -20,7 +20,6 @@ set(Boost_USE_DEBUG_LIBS        OFF)  # ignore debug libs and
 set(Boost_USE_RELEASE_LIBS       ON)  # only find release libs
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 list(APPEND extra_headers ${Boost_INCLUDE_DIRS})
 
 # Eigen
