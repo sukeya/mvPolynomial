@@ -45,4 +45,7 @@ target_link_libraries(
     multivar_polynomial_compiler_flags
 )
 
-add_subdirectory(test)
+if (BUILD_TEST)
+  include(CTest)
+  add_subdirectory(test)
+endif()
