@@ -6,18 +6,29 @@
 #include <concepts>
 
 namespace multivar_polynomial {
+/**
+ * \brief A class comparing two multivariable polynomials by its indeces.
+ * \tparam IntType the type of elements of indices.
+ * \tparam D the dimension of indices.
+*/
 template <std::signed_integral IntType, int D>
 class IndexComparer {
  public:
-  static_assert(D > 1, "IndexComparer: the dimension must be greater than 1.");
+  static_assert(D > 0, "IndexComparer: the dimension must be positive.");
 
   using Index = IndexType<IntType, D>;
 
-  auto operator()(const Index& lhd, const Index& rhd) const {
+  /**
+   * \brief If the elems of lhd are equal to that of rhd until i th time and lhd[i] is greater than rhd[i], return true: otherwise, false.
+   * \param[in] lhd an index
+   * \param[in] rhd an index
+  */
+  constexpr bool operator()(const Index& lhd, const Index& rhd) const noexcept {
     for (std::size_t i = 0; i != lhd.size(); ++i) {
-      if (lhd[i] > rhd[i]) {
+      auto comp = lhd[i] <=> rhd[i];
+      if (comp > 0) {
         return true;
-      } else if (lhd[i] < rhd[i]) {
+      } else if (comp < 0) {
         return false;
       }
     }
@@ -30,7 +41,7 @@ class IndexComparer<IntType, 1> {
  public:
   using Index = IntType;
 
-  auto operator()(Index lhd, Index rhd) const { return lhd > rhd; }
+  constexpr bool operator()(Index lhd, Index rhd) const noexcept { return lhd > rhd; }
 };
 }  // namespace multivar_polynomial
 
