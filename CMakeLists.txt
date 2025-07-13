@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.2)
+cmake_minimum_required(VERSION 3.30)
 
 project(multivar_polynomial VERSION 0.1.0 LANGUAGES CXX)
 
@@ -8,7 +8,7 @@ set(CMAKE_OPTIMIZE_DEPENDENCIES ON)
 
 # Library
 # Boost
-find_package(Boost REQUIRED)
+find_package(Boost CONFIG REQUIRED)
 list(APPEND extra_headers ${Boost_INCLUDE_DIRS})
 
 # Eigen
