@@ -46,9 +46,7 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_Of, *utf::tolerance(tt::fpc::percent_tolerance
   BOOST_TEST(Of(m, {2, 3}) == 112);
 }
 
-BOOST_AUTO_TEST_CASE(
-    mvpolynomial_derivative, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))
-) {
+BOOST_AUTO_TEST_CASE(mvpolynomial_derivative, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -79,9 +77,7 @@ BOOST_AUTO_TEST_CASE(
   }
 }
 
-BOOST_AUTO_TEST_CASE(
-    mvpolynomial_integral, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))
-) {
+BOOST_AUTO_TEST_CASE(mvpolynomial_integral, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -106,9 +102,7 @@ BOOST_AUTO_TEST_CASE(
   }
 }
 
-BOOST_AUTO_TEST_CASE(
-    mvpolynomial_multiply, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))
-) {
+BOOST_AUTO_TEST_CASE(mvpolynomial_multiply, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
