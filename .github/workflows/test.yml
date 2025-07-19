@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  test:
+  ctest:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -14,13 +14,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up vcpkg
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git vcpkg
-          cd vcpkg && ./bootstrap-vcpkg.sh
-      - name: Install ninja
+          git clone --depth 1 -b 2025.06.13 https://github.com/microsoft/vcpkg.git vcpkg
+      - name: Install build tools
         run: |
           sudo apt install ninja-build build-essential
+          echo "$(pwd)/vcpkg" >> $GITHUB_PATH
       - name: Build tests
         run: |
+          ./vcpkg/bootstrap-vcpkg.sh
           cmake --preset test -DCMAKE_BUILD_TYPE=Debug
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
