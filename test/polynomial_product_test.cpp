@@ -1,15 +1,15 @@
 #define BOOST_TEST_MODULE polynomial_product_unit_test
 
 #include "boost/test/unit_test.hpp"
-#include "multivar_polynomial/polynomial_product.hpp"
-#include "multivar_polynomial/polynomial.hpp"
+#include "mvpolynomial/polynomial_product.hpp"
+#include "mvpolynomial/polynomial.hpp"
 
 #include <vector>
 
 namespace utf = boost::unit_test;
 namespace tt  = boost::test_tools;
 
-using Poly = multivar_polynomial::Polynomial<int, double>;
+using Poly = mvpolynomial::Polynomial<int, double>;
 
 BOOST_AUTO_TEST_CASE(polynomial_product_init, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto v  = std::array<Poly, 2>({
@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_CASE(polynomial_product_init, *utf::tolerance(tt::fpc::percent_t
       Poly({{0, 4}, {1, 5}}
       )
   });
-  auto pp = multivar_polynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
+  auto pp = mvpolynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
   BOOST_TEST(v.size() == pp.size());
   for (std::size_t i = 0; i != v.size(); ++i) {
     BOOST_TEST(v[i] == pp[i]);
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(polynomial_product_Of, *utf::tolerance(tt::fpc::percent_tol
       Poly({{0, 4}, {1, 5}}
       )
   });
-  auto pp = multivar_polynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
+  auto pp = mvpolynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
   BOOST_TEST(Of(pp, Eigen::Vector2d::Zero()) == 4);
   BOOST_TEST(Of(pp, Eigen::Vector2d::Ones() * 2) == (1 + 4 + 12) * (4 + 10));
 }
@@ -45,8 +45,8 @@ BOOST_AUTO_TEST_CASE(polynomial_product_D, *utf::tolerance(tt::fpc::percent_tole
       )
   });
 
-  auto pp   = multivar_polynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
-  auto dpp0 = multivar_polynomial::D(pp, 0);
+  auto pp   = mvpolynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
+  auto dpp0 = mvpolynomial::D(pp, 0);
   v         = {
       Poly({{0, 2}, {1, 6}}
       ),
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(polynomial_product_D, *utf::tolerance(tt::fpc::percent_tole
   for (std::size_t i = 0; i != v.size(); ++i) {
     BOOST_TEST(v[i] == dpp0[i]);
   }
-  auto dpp1 = multivar_polynomial::D(pp, 1);
+  auto dpp1 = mvpolynomial::D(pp, 1);
   v         = {
       Poly({{0, 1}, {1, 2}, {2, 3}}
       ),
@@ -80,8 +80,8 @@ BOOST_AUTO_TEST_CASE(
       )
   });
 
-  auto pp   = multivar_polynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
-  auto spp0 = multivar_polynomial::Integrate(pp, 0);
+  auto pp   = mvpolynomial::PolynomialProduct<Poly, 2>(v.begin(), v.end());
+  auto spp0 = mvpolynomial::Integrate(pp, 0);
   v         = {
       Poly({{1, 1}, {2, 1}, {3, 1}}
       ),
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(
   for (std::size_t i = 0; i != v.size(); ++i) {
     BOOST_TEST(v[i] == spp0[i]);
   }
-  auto spp1 = multivar_polynomial::Integrate(pp, 1);
+  auto spp1 = mvpolynomial::Integrate(pp, 1);
   v         = {
       Poly({{0, 1}, {1, 2}, {2, 3}}
       ),

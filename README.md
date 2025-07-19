@@ -23,12 +23,12 @@ add_subdirectory(multivariable_polynomial)
 ```
 Finally, add linked libraries.
 ```
-target_link_libraries(your_exe PRIVATE multivar_polynomial)
+target_link_libraries(your_exe PRIVATE mvpolynomial)
 ```
 Then, you will be able to use this library.
 
 # How to use
-The namespace is `multivar_polynomial`.
+The namespace is `mvpolynomial`.
 The examples exist in "test" directory.
 
 ## Multi-variable polynomial

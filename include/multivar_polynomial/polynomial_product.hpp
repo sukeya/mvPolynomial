@@ -1,7 +1,7 @@
-#ifndef _MULTIVAR_POLYNOMIAL_POLYNOMIAL_PRODUCT_HPP_
-#define _MULTIVAR_POLYNOMIAL_POLYNOMIAL_PRODUCT_HPP_
+#ifndef _MVPOLYNOMIAL_POLYNOMIAL_PRODUCT_HPP_
+#define _MVPOLYNOMIAL_POLYNOMIAL_PRODUCT_HPP_
 
-#include "multivar_polynomial/type.hpp"
+#include "mvpolynomial/type.hpp"
 
 #include <array>
 #include <numeric>
@@ -12,7 +12,7 @@
 #include "Eigen/Core"
 #include "fmt/core.h"
 
-namespace multivar_polynomial {
+namespace mvpolynomial {
 template <class P, class R>
 P MakeScalarPolynomial(R r) {
   return P(r);
@@ -180,6 +180,6 @@ auto Integrate(const PolynomialProduct<P, Dim>& p, std::size_t axis) {
   q.at(axis) = Integrate(p.at(axis));
   return q;
 }
-}  // namespace multivar_polynomial
+}  // namespace mvpolynomial
 
 #endif

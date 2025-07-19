@@ -1,8 +1,8 @@
-#ifndef _MULTIVAR_POLYNOMIAL_POLYNOMIAL_HPP_
-#define _MULTIVAR_POLYNOMIAL_POLYNOMIAL_HPP_
+#ifndef _MVPOLYNOMIAL_POLYNOMIAL_HPP_
+#define _MVPOLYNOMIAL_POLYNOMIAL_HPP_
 
-#include "multivar_polynomial/type.hpp"
-#include "multivar_polynomial/index_comparer.hpp"
+#include "mvpolynomial/type.hpp"
+#include "mvpolynomial/index_comparer.hpp"
 
 #include <concepts>
 
@@ -10,7 +10,7 @@
 #include "boost/container/new_allocator.hpp"
 #include "fmt/core.h"
 
-namespace multivar_polynomial {
+namespace mvpolynomial {
 template <
     std::signed_integral IntType,
     class R,
@@ -767,6 +767,6 @@ auto Of(
   last_coeff *= std::pow(x, last_index);
   return last_coeff;
 }
-}  // namespace multivar_polynomial
+}  // namespace mvpolynomial
 
 #endif

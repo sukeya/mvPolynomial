@@ -1,9 +1,9 @@
-#ifndef _MULTIVAR_POLYNOMIAL_MULTIVAR_POLYNOMIAL_HPP_
-#define _MULTIVAR_POLYNOMIAL_MULTIVAR_POLYNOMIAL_HPP_
+#ifndef _MVPOLYNOMIAL_MVPOLYNOMIAL_HPP_
+#define _MVPOLYNOMIAL_MVPOLYNOMIAL_HPP_
 
-#include "multivar_polynomial/type.hpp"
-#include "multivar_polynomial/index_comparer.hpp"
-#include "multivar_polynomial/polynomial.hpp"
+#include "mvpolynomial/type.hpp"
+#include "mvpolynomial/index_comparer.hpp"
+#include "mvpolynomial/polynomial.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -18,7 +18,7 @@
 #include "Eigen/Core"
 #include "fmt/core.h"
 
-namespace multivar_polynomial {
+namespace mvpolynomial {
 template <
     std::signed_integral IntType,
     std::floating_point  R,
@@ -1223,6 +1223,6 @@ class ExactOf<IntType, R, 1, AllocatorOrContainer> {
  private:
   polynomial_type polynomial_;
 };
-}  // namespace multivar_polynomial
+}  // namespace mvpolynomial
 
 #endif
