@@ -4,6 +4,7 @@
 #include "multivar_polynomial/type.hpp"
 
 #include <concepts>
+#include <compare>
 
 namespace multivar_polynomial {
 /**
@@ -33,6 +34,19 @@ class IndexComparer {
       }
     }
     return false;
+  }
+
+
+  constexpr std::strong_ordering get_ordering(const Index& lhd, const Index& rhd) const noexcept {
+    for (std::size_t i = 0; i != lhd.size(); ++i) {
+      auto comp = lhd[i] <=> rhd[i];
+      if (comp > 0) {
+        return std::strong_ordering::greater;
+      } else if (comp < 0) {
+        return std::strong_ordering::less;
+      }
+    }
+    return std::strong_ordering::equal;
   }
 };
 

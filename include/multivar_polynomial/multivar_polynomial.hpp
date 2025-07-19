@@ -21,18 +21,18 @@
 namespace multivar_polynomial {
 template <
     std::signed_integral IntType,
-    class R,
+    std::floating_point R,
     int D,
     class Comparer = IndexComparer<IntType, D>,
     class AllocatorOrContainer =
         boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>>
 class MultiVarPolynomial {
  public:
-  static_assert(D > 1, "MultiVarPolynomial: the dimension must be greater than 1.");
+  static_assert(D > 0, "MultiVarPolynomial: the dimension must be greater than 0.");
 
-  inline static const int dim{D};
+  static constexpr int dim = D;
 
-  using index_type = AllocatorOrContainer::value_type::first_type;
+  using index_type = typename AllocatorOrContainer::value_type::first_type;
   using coord_type = CoordType<R, dim>;
 
  private:
@@ -491,7 +491,7 @@ class MultiVarPolynomial {
   MultiVarPolynomial operator-() const {
     auto m = MultiVarPolynomial(*this);
     for (auto& i_and_v : m) {
-      auto& [i, v] = i_and_v;
+      auto& [_, v] = i_and_v;
       v            = -v;
     }
     return m;
@@ -499,7 +499,7 @@ class MultiVarPolynomial {
 
   MultiVarPolynomial& operator*=(mapped_type r) {
     for (auto& i_and_v : index2value_) {
-      auto& [i, v] = i_and_v;
+      auto& [_, v] = i_and_v;
       v *= r;
     }
     return *this;
