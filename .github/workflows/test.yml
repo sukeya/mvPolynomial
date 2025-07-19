@@ -1,0 +1,26 @@
+name: Deploy
+
+on: 
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up vcpkg
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/vcpkg.git
+          path: vcpkg
+      - name: Build tests
+        run: |
+          cmake --preset test -DCMAKE_BUILD_TYPE=Debug
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}
+      - name: Run tests
+        run: ctest --test-dir ./build
