@@ -15,6 +15,10 @@ jobs:
       - name: Set up vcpkg
         run: |
           git clone --depth 1 https://github.com/microsoft/vcpkg.git vcpkg
+          cd vcpkg && ./bootstrap-vcpkg.sh
+      - name: Install ninja
+        run: |
+          sudo apt install ninja
       - name: Build tests
         run: |
           cmake --preset test -DCMAKE_BUILD_TYPE=Debug
