@@ -13,14 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up vcpkg
-        uses: actions/checkout@v4
-        with:
-          repository: microsoft/vcpkg.git
-          path: vcpkg
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git vcpkg
       - name: Build tests
         run: |
           cmake --preset test -DCMAKE_BUILD_TYPE=Debug
         env:
-          VCPKG_ROOT: ${{ github.workspace }}
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
       - name: Run tests
         run: ctest --test-dir ./build
