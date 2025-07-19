@@ -1,6 +1,10 @@
 {
     "dependencies": [
-        "boost",
+        "boost-container",
+        "boost-iterator",
+        "boost-range",
+        "boost-test",
+        "boost-tuple",
         "eigen3",
         "fmt"
     ]

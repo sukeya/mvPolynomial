@@ -9,10 +9,10 @@
 #include <iterator>
 #include <memory>
 #include <sstream>
+#include <ranges>
 
 #include "boost/container/flat_map.hpp"
 #include "boost/container/new_allocator.hpp"
-#include "boost/range/sub_range.hpp"
 #include "boost/tuple/tuple.hpp"
 #include "boost/iterator/zip_iterator.hpp"
 #include "Eigen/Core"
@@ -945,8 +945,8 @@ class ExactOf {
     // Make a projected polynomial.
     auto projected_polynomial = projected_polynomial_type();
     projected_polynomial.clear();
-    for (auto polynomial_const_it :
-         boost::sub_range<decltype(partition_)>(partition_.begin(), std::prev(partition_.end()))) {
+    for (const auto& polynomial_const_it :
+         std::ranges::subrange(partition_.begin(), std::prev(partition_.end()))) {
       projected_polynomial.emplace_hint(
           projected_polynomial.end(),
           MakeSubIndex<IndexType>(polynomial_const_it->first),
@@ -1095,8 +1095,8 @@ class ExactOf<IntType, R, 2, AllocatorOrContainer> {
     // Make a projected polynomial.
     auto projected_polynomial = projected_polynomial_type();
     projected_polynomial.clear();
-    for (auto polynomial_const_it :
-         boost::sub_range<decltype(partition_)>(partition_.begin(), std::prev(partition_.end()))) {
+    for (const auto& polynomial_const_it :
+         std::ranges::subrange(partition_.begin(), std::prev(partition_.end()))) {
       projected_polynomial.emplace_hint(
           projected_polynomial.end(),
           polynomial_const_it->first[0],
