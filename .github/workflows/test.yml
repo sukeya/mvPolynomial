@@ -18,7 +18,7 @@ jobs:
           cd vcpkg && ./bootstrap-vcpkg.sh
       - name: Install ninja
         run: |
-          sudo apt install ninja-build
+          sudo apt install ninja-build build-essential
       - name: Build tests
         run: |
           cmake --preset test -DCMAKE_BUILD_TYPE=Debug
