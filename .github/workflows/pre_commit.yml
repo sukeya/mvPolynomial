@@ -1,4 +1,4 @@
-name: Deploy
+name: Pre-commit
 
 on: 
   push:
