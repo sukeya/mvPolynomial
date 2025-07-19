@@ -21,8 +21,8 @@
 namespace multivar_polynomial {
 template <
     std::signed_integral IntType,
-    std::floating_point R,
-    int D,
+    std::floating_point  R,
+    int                  D,
     class Comparer = IndexComparer<IntType, D>,
     class AllocatorOrContainer =
         boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>>

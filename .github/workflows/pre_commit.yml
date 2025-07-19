@@ -1,6 +1,6 @@
 name: Pre-commit
 
-on: 
+on:
   push:
     branches:
       - main

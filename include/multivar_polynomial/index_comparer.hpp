@@ -11,7 +11,7 @@ namespace multivar_polynomial {
  * \brief A class comparing two multivariable polynomials by its indeces.
  * \tparam IntType the type of elements of indices.
  * \tparam D the dimension of indices.
-*/
+ */
 template <std::signed_integral IntType, int D>
 class IndexComparer {
  public:
@@ -20,10 +20,11 @@ class IndexComparer {
   using Index = IndexType<IntType, D>;
 
   /**
-   * \brief If the elems of lhd are equal to that of rhd until i th time and lhd[i] is greater than rhd[i], return true: otherwise, false.
+   * \brief If the elems of lhd are equal to that of rhd until i th time and lhd[i] is greater than
+   * rhd[i], return true: otherwise, false.
    * \param[in] lhd an index
    * \param[in] rhd an index
-  */
+   */
   constexpr bool operator()(const Index& lhd, const Index& rhd) const noexcept {
     for (std::size_t i = 0; i != lhd.size(); ++i) {
       auto comp = lhd[i] <=> rhd[i];
@@ -35,7 +36,6 @@ class IndexComparer {
     }
     return false;
   }
-
 
   constexpr std::strong_ordering get_ordering(const Index& lhd, const Index& rhd) const noexcept {
     for (std::size_t i = 0; i != lhd.size(); ++i) {
