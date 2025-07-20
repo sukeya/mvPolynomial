@@ -5,12 +5,12 @@
 
 #include "Eigen/Core"
 
-namespace mvpolynomial {
+namespace mvPolynomial {
 template <std::signed_integral IntType, int D>
 using IndexType = Eigen::Array<IntType, D, 1>;
 
 template <std::floating_point R, int D>
 using CoordType = Eigen::Array<R, D, 1>;
-}  // namespace mvpolynomial
+}  // namespace mvPolynomial
 
 #endif

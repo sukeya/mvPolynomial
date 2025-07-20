@@ -1,9 +1,9 @@
 #ifndef _MVPOLYNOMIAL_MVPOLYNOMIAL_HPP_
 #define _MVPOLYNOMIAL_MVPOLYNOMIAL_HPP_
 
-#include "mvpolynomial/type.hpp"
-#include "mvpolynomial/index_comparer.hpp"
-#include "mvpolynomial/polynomial.hpp"
+#include "mvPolynomial/type.hpp"
+#include "mvPolynomial/index_comparer.hpp"
+#include "mvPolynomial/polynomial.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -18,7 +18,7 @@
 #include "Eigen/Core"
 #include "fmt/core.h"
 
-namespace mvpolynomial {
+namespace mvPolynomial {
 template <
     std::signed_integral IntType,
     std::floating_point  R,
@@ -1223,6 +1223,6 @@ class ExactOf<IntType, R, 1, AllocatorOrContainer> {
  private:
   polynomial_type polynomial_;
 };
-}  // namespace mvpolynomial
+}  // namespace mvPolynomial
 
 #endif

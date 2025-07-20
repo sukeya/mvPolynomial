@@ -1,14 +1,14 @@
-#define BOOST_TEST_MODULE mvpolynomial_unit_test
+#define BOOST_TEST_MODULE mvPolynomial_unit_test
 
 #include "boost/test/unit_test.hpp"
-#include "mvpolynomial/polynomial.hpp"
+#include "mvPolynomial/polynomial.hpp"
 
 #include <vector>
 
 namespace utf = boost::unit_test;
 namespace tt  = boost::test_tools;
 
-using Poly = mvpolynomial::Polynomial<int, double>;
+using Poly = mvPolynomial::Polynomial<int, double>;
 
 BOOST_AUTO_TEST_CASE(polynomial_init, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<int, double>>();
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(polynomial_derivative, *utf::tolerance(tt::fpc::percent_tol
       {0, 2},
       {1, 6}
   };
-  auto dm0 = mvpolynomial::D(m);
+  auto dm0 = mvPolynomial::D(m);
   for (auto i = 0; i < ans.size(); ++i) {
     BOOST_TEST(dm0[ans[i].first] == ans[i].second);
   }
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(polynomial_integral, *utf::tolerance(tt::fpc::percent_toler
       {2, 1},
       {3, 1}
   };
-  auto sm = mvpolynomial::Integrate(m);
+  auto sm = mvPolynomial::Integrate(m);
   for (auto i = 0; i < ans.size(); ++i) {
     BOOST_TEST(sm[ans[i].first] == ans[i].second);
   }

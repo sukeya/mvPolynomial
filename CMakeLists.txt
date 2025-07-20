@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(mvpolynomial VERSION 0.1.0 LANGUAGES CXX)
+project(mvPolynomial VERSION 0.1.0 LANGUAGES CXX)
 
 # Config
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -19,8 +19,8 @@ list(APPEND extra_libs Eigen3::Eigen)
 find_package(fmt CONFIG REQUIRED)
 list(APPEND extra_libs fmt::fmt)
 
-add_library(mvpolynomial_compiler_flags INTERFACE)
-target_compile_features(mvpolynomial_compiler_flags INTERFACE cxx_std_20)
+add_library(mvPolynomial_compiler_flags INTERFACE)
+target_compile_features(mvPolynomial_compiler_flags INTERFACE cxx_std_20)
 
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(
@@ -33,7 +33,7 @@ target_link_libraries(
   ${PROJECT_NAME}
   INTERFACE
     ${extra_libs}
-    mvpolynomial_compiler_flags
+    mvPolynomial_compiler_flags
 )
 
 if (BUILD_TEST)

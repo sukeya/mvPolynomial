@@ -1,19 +1,19 @@
-#define BOOST_TEST_MODULE mvpolynomial_unit_test
+#define BOOST_TEST_MODULE mvPolynomial_unit_test
 
 #include "boost/test/unit_test.hpp"
-#include "mvpolynomial/mvpolynomial.hpp"
+#include "mvPolynomial/mvPolynomial.hpp"
 
 #include <vector>
 
 namespace utf = boost::unit_test;
 namespace tt  = boost::test_tools;
 
-using MP2 = mvpolynomial::MultiVarPolynomial<int, double, 2>;
-using MP3 = mvpolynomial::MultiVarPolynomial<int, double, 3>;
+using MP2 = mvPolynomial::MultiVarPolynomial<int, double, 2>;
+using MP3 = mvPolynomial::MultiVarPolynomial<int, double, 3>;
 
-using EO3 = mvpolynomial::ExactOf<int, double, 3>;
+using EO3 = mvPolynomial::ExactOf<int, double, 3>;
 
-BOOST_AUTO_TEST_CASE(mvpolynomial_init, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
+BOOST_AUTO_TEST_CASE(mvPolynomial_init, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_init, *utf::tolerance(tt::fpc::percent_toleran
   }
 }
 
-BOOST_AUTO_TEST_CASE(mvpolynomial_Of, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
+BOOST_AUTO_TEST_CASE(mvPolynomial_Of, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_Of, *utf::tolerance(tt::fpc::percent_tolerance
   BOOST_TEST(Of(m, {2, 3}) == 112);
 }
 
-BOOST_AUTO_TEST_CASE(mvpolynomial_derivative, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
+BOOST_AUTO_TEST_CASE(mvPolynomial_derivative, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_derivative, *utf::tolerance(tt::fpc::percent_t
       {{0, 1},  4},
       {{1, 0}, 10}
   };
-  auto dm0 = mvpolynomial::D(m, 0);
+  auto dm0 = mvPolynomial::D(m, 0);
   for (auto i = 0; i < ans.size(); ++i) {
     BOOST_TEST(dm0[ans[i].first] == ans[i].second);
   }
@@ -71,13 +71,13 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_derivative, *utf::tolerance(tt::fpc::percent_t
       {{1, 0},  4},
       {{0, 1}, 12}
   };
-  auto dm1 = mvpolynomial::D(m, 1);
+  auto dm1 = mvPolynomial::D(m, 1);
   for (auto i = 0; i < ans.size(); ++i) {
     BOOST_TEST(dm1[ans[i].first] == ans[i].second);
   }
 }
 
-BOOST_AUTO_TEST_CASE(mvpolynomial_integral, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
+BOOST_AUTO_TEST_CASE(mvPolynomial_integral, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -96,13 +96,13 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_integral, *utf::tolerance(tt::fpc::percent_tol
       {{2, 1},   5},
       {{0, 3},   2}
   };
-  auto sm = mvpolynomial::Integrate(m, 1);
+  auto sm = mvPolynomial::Integrate(m, 1);
   for (auto i = 0; i < ans.size(); ++i) {
     BOOST_TEST(sm[ans[i].first] == ans[i].second);
   }
 }
 
-BOOST_AUTO_TEST_CASE(mvpolynomial_multiply, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
+BOOST_AUTO_TEST_CASE(mvPolynomial_multiply, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_multiply, *utf::tolerance(tt::fpc::percent_tol
   }
 }
 
-BOOST_AUTO_TEST_CASE(mvpolynomial_sum, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
+BOOST_AUTO_TEST_CASE(mvPolynomial_sum, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_sum, *utf::tolerance(tt::fpc::percent_toleranc
   }
 }
 
-BOOST_AUTO_TEST_CASE(mvpolynomial_sub, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
+BOOST_AUTO_TEST_CASE(mvPolynomial_sub, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
       {{0, 0}, 1},
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(mvpolynomial_sub, *utf::tolerance(tt::fpc::percent_toleranc
 }
 
 BOOST_AUTO_TEST_CASE(
-    mvpolynomial_default_value_check, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))
+    mvPolynomial_default_value_check, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))
 ) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(
 }
 
 BOOST_AUTO_TEST_CASE(
-    mvpolynomial_exact_of_init, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))
+    mvPolynomial_exact_of_init, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))
 ) {
   auto ans = std::vector<std::pair<Eigen::Vector3i, double>>();
   ans      = {

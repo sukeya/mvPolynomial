@@ -1,12 +1,12 @@
 #ifndef _MVPOLYNOMIAL_INDEX_COMPARER_HPP_
 #define _MVPOLYNOMIAL_INDEX_COMPARER_HPP_
 
-#include "mvpolynomial/type.hpp"
+#include "mvPolynomial/type.hpp"
 
 #include <concepts>
 #include <compare>
 
-namespace mvpolynomial {
+namespace mvPolynomial {
 /**
  * \brief A class comparing two multivariable polynomials by its indeces.
  * \tparam IntType the type of elements of indices.
@@ -57,6 +57,6 @@ class IndexComparer<IntType, 1> {
 
   constexpr bool operator()(Index lhd, Index rhd) const noexcept { return lhd > rhd; }
 };
-}  // namespace mvpolynomial
+}  // namespace mvPolynomial
 
 #endif
