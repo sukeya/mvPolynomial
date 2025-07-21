@@ -26,4 +26,4 @@ jobs:
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
       - name: Run tests
-        run: ctest --test-dir ./build
+        run: ctest --test-dir ./build/test
