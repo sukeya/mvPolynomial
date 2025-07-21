@@ -8,8 +8,8 @@
 namespace utf = boost::unit_test;
 namespace tt  = boost::test_tools;
 
-using MP2 = mvPolynomial::MultiVarPolynomial<int, double, 2>;
-using MP3 = mvPolynomial::MultiVarPolynomial<int, double, 3>;
+using MP2 = mvPolynomial::MVPolynomial<int, double, 2>;
+using MP3 = mvPolynomial::MVPolynomial<int, double, 3>;
 
 using EO3 = mvPolynomial::ExactOf<int, double, 3>;
 

@@ -32,7 +32,7 @@ The namespace is `mvPolynomial`.
 The examples exist in "test" directory.
 
 ## Multi-variable polynomial
-A class `MultiVarPolynomial` implements multi-variable polynomials.
+A class `MVPolynomial` implements multi-variable polynomials.
 Its interface is the same as Boost's flat_map except that it lacks `merge` member function.
 So, please see the document of Boost's flat_map.
 
