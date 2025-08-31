@@ -36,7 +36,7 @@ target_link_libraries(
     mvPolynomial_compiler_flags
 )
 
-if (BUILD_TEST)
+if (BUILD_TESTS)
   include(CTest)
   add_subdirectory(test)
 endif()
