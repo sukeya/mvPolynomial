@@ -18,7 +18,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
-          sudo apt install ninja-build build-essential cmake
+          sudo apt install -y ninja-build build-essential cmake
           echo "$(pwd)/vcpkg" >> $GITHUB_PATH
       - name: Build tests
         run: |
