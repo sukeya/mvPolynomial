@@ -14,16 +14,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up vcpkg
         run: |
-          git clone --depth 1 -b 2025.06.13 https://github.com/microsoft/vcpkg.git vcpkg
+          git clone --depth 1 -b 2025.08.27 https://github.com/microsoft/vcpkg.git vcpkg
       - name: Install build tools
         run: |
-          sudo apt install ninja-build build-essential
+          sudo apt update
+          sudo apt install ninja-build build-essential cmake
           echo "$(pwd)/vcpkg" >> $GITHUB_PATH
       - name: Build tests
         run: |
           ./vcpkg/bootstrap-vcpkg.sh
-          cmake --preset test -DCMAKE_BUILD_TYPE=Debug
+          cmake --preset CI_test
+          cd ./build/debug && ninja
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
       - name: Run tests
-        run: ctest --test-dir ./build/test
+        run: ctest --test-dir ./build/debug/test

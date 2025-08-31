@@ -1,28 +1,21 @@
 {
-  "version": 6,
+  "version": 7,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 25,
-    "patch": 2
+    "minor": 27,
+    "patch": 7
   },
   "configurePresets": [
     {
-      "name": "default",
-      "displayName": "Default Config",
-      "description": "Default build using Ninja generator",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/"
-    },
-    {
-      "name": "test",
-      "displayName": "Test Config",
-      "description": "Test build using Ninja generator",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/",
+      "name": "CI_test",
+      "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "BUILD_TEST": "ON"
-      }
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      },
+      "generator": "Ninja"
     }
   ]
 }
