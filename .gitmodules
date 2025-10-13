@@ -1,0 +1,3 @@
+[submodule "platanus"]
+	path = platanus
+	url = https://github.com/sukeya/platanus.git
