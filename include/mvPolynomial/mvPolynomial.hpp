@@ -19,6 +19,16 @@
 #include "fmt/core.h"
 
 namespace mvPolynomial {
+namespace {
+void CheckAxis(int dim, int axis) {
+  if (axis < 0 || axis >= dim) {
+    throw std::runtime_error(
+        fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim)
+    );
+  }
+}
+}  // namespace
+
 template <
     std::signed_integral IntType,
     std::floating_point  R,
@@ -66,6 +76,13 @@ class MVPolynomial {
   using const_iterator         = IndexContainer::const_iterator;
   using reverse_iterator       = IndexContainer::reverse_iterator;
   using const_reverse_iterator = IndexContainer::const_reverse_iterator;
+
+  MVPolynomial()                                     = default;
+  MVPolynomial(const MVPolynomial& other)            = default;
+  MVPolynomial& operator=(const MVPolynomial& other) = default;
+  MVPolynomial(MVPolynomial&& other)                 = default;
+  MVPolynomial& operator=(MVPolynomial&& other)      = default;
+  ~MVPolynomial()                                    = default;
 
   explicit MVPolynomial(const allocator_type& allocator) : index2value_(allocator) {
     CheckSelfIndexes();
@@ -209,21 +226,6 @@ class MVPolynomial {
   }
 
   explicit MVPolynomial(mapped_type r) { index2value_.at(index_type::Zero()) = r; }
-
-  MVPolynomial()                                     = default;
-  MVPolynomial(const MVPolynomial& other)            = default;
-  MVPolynomial& operator=(const MVPolynomial& other) = default;
-  MVPolynomial(MVPolynomial&& other)                 = default;
-  MVPolynomial& operator=(MVPolynomial&& other)      = default;
-  virtual ~MVPolynomial()                            = default;
-
-  static void CheckAxis(std::size_t axis) {
-    if (axis < 0 || axis >= dim) {
-      throw std::runtime_error(
-          fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim)
-      );
-    }
-  }
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
 
