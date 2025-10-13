@@ -11,8 +11,6 @@
 #include <sstream>
 #include <ranges>
 
-#include "boost/container/flat_map.hpp"
-#include "boost/container/new_allocator.hpp"
 #include "boost/tuple/tuple.hpp"
 #include "boost/iterator/zip_iterator.hpp"
 #include "Eigen/Core"
@@ -33,35 +31,33 @@ template <
     std::signed_integral IntType,
     std::floating_point  R,
     int                  D,
-    class Comparer = IndexComparer<IntType, D>,
-    class AllocatorOrContainer =
-        boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>>
-class MVPolynomial {
+    class Allocator = std::allocator<std::pair<IndexType<IntType, D>, R>>>
+class MVPolynomial final {
  public:
   static_assert(D > 0, "MVPolynomial: the dimension must be greater than 0.");
 
   static constexpr int dim = D;
 
-  using index_type = typename AllocatorOrContainer::value_type::first_type;
+  // This setting is too strict, so I expect users to set tolerance.
+  static R tolerance = std::numeric_limits<R>::min_exponent10();
+
+  using index_type = IndexType<IntType, D>;
   using coord_type = CoordType<R, dim>;
 
  private:
-  using IndexContainer = boost::container::flat_map<index_type, R, Comparer, AllocatorOrContainer>;
+  using Compare        = IndexComparer<IntType, D>;
+  using IndexContainer = platanus::btree_map<index_type, R, Comparer, Allocator>;
 
  public:
-  using key_type           = IndexContainer::key_type;
-  using mapped_type        = IndexContainer::mapped_type;
-  using value_type         = IndexContainer::value_type;
-  using movable_value_type = IndexContainer::movable_value_type;
+  using key_type    = IndexContainer::key_type;
+  using value_type  = IndexContainer::value_type;
+  using mapped_type = IndexContainer::mapped_type;
+  using coeff_type  = mapped_type;
 
   using key_compare   = IndexContainer::key_compare;
   using value_compare = IndexContainer::value_compare;
 
-  using sequence_type = IndexContainer::sequence_type;
-
-  using allocator_type        = IndexContainer::allocator_type;
-  using allocator_traits_type = IndexContainer::allocator_traits_type;
-  using stored_allocator_type = IndexContainer::stored_allocator_type;
+  using allocator_type = IndexContainer::allocator_type;
 
   using pointer       = IndexContainer::pointer;
   using const_pointer = IndexContainer::const_pointer;
@@ -88,13 +84,6 @@ class MVPolynomial {
     CheckSelfIndexes();
   }
 
-  explicit MVPolynomial(const Comparer& comparer) : index2value_(comparer) { CheckSelfIndexes(); }
-
-  explicit MVPolynomial(const Comparer& comparer, const allocator_type& allocator)
-      : index2value_(comparer, allocator) {
-    CheckSelfIndexes();
-  }
-
   template <typename InputIterator>
   MVPolynomial(InputIterator s, InputIterator e) : index2value_(s, e) {
     CheckSelfIndexes();
@@ -106,106 +95,8 @@ class MVPolynomial {
     CheckSelfIndexes();
   }
 
-  template <typename InputIterator>
-  explicit MVPolynomial(InputIterator s, InputIterator e, const Comparer& c)
-      : index2value_(s, e, c) {
-    CheckSelfIndexes();
-  }
-
-  template <typename InputIterator>
-  explicit MVPolynomial(
-      InputIterator s, InputIterator e, const Comparer& c, const allocator_type& a
-  )
-      : index2value_(s, e, c, a) {
-    CheckSelfIndexes();
-  }
-
-  template <typename InputIterator>
-  explicit MVPolynomial(
-      boost::container::ordered_unique_range_t o, InputIterator s, InputIterator e
-  )
-      : index2value_(o, s, e) {
-    CheckSelfIndexes();
-  }
-
-  template <typename InputIterator>
-  explicit MVPolynomial(
-      boost::container::ordered_unique_range_t o,
-      InputIterator                            s,
-      InputIterator                            e,
-      const Comparer&                          c
-  )
-      : index2value_(o, s, e, c) {
-    CheckSelfIndexes();
-  }
-
-  template <typename InputIterator>
-  explicit MVPolynomial(
-      boost::container::ordered_unique_range_t o,
-      InputIterator                            s,
-      InputIterator                            e,
-      const Comparer&                          c,
-      const allocator_type&                    a
-  )
-      : index2value_(o, s, e, c, a) {
-    CheckSelfIndexes();
-  }
-
-  template <typename InputIterator>
-  explicit MVPolynomial(
-      boost::container::ordered_unique_range_t o,
-      InputIterator                            s,
-      InputIterator                            e,
-      const allocator_type&                    a
-  )
-      : index2value_(o, s, e, a) {
-    CheckSelfIndexes();
-  }
-
-  explicit MVPolynomial(std::initializer_list<value_type> l) : index2value_(l) {
-    CheckSelfIndexes();
-  }
-
-  explicit MVPolynomial(std::initializer_list<value_type> l, const allocator_type& a)
+  MVPolynomial(std::initializer_list<value_type> l, const allocator_type& a = allocator_type{})
       : index2value_(l, a) {
-    CheckSelfIndexes();
-  }
-
-  explicit MVPolynomial(std::initializer_list<value_type> l, const Comparer& c)
-      : index2value_(l, c) {
-    CheckSelfIndexes();
-  }
-
-  explicit MVPolynomial(
-      std::initializer_list<value_type> l, const Comparer& c, const allocator_type& a
-  )
-      : index2value_(l, c, a) {
-    CheckSelfIndexes();
-  }
-
-  explicit MVPolynomial(
-      boost::container::ordered_unique_range_t o, std::initializer_list<value_type> l
-  )
-      : index2value_(o, l) {
-    CheckSelfIndexes();
-  }
-
-  explicit MVPolynomial(
-      boost::container::ordered_unique_range_t o,
-      std::initializer_list<value_type>        l,
-      const Comparer&                          c
-  )
-      : index2value_(o, l, c) {
-    CheckSelfIndexes();
-  }
-
-  explicit MVPolynomial(
-      boost::container::ordered_unique_range_t o,
-      std::initializer_list<value_type>        l,
-      const Comparer&                          c,
-      const allocator_type&                    a
-  )
-      : index2value_(o, l, c, a) {
     CheckSelfIndexes();
   }
 
@@ -621,24 +512,11 @@ class MVPolynomial {
   friend void swap(MVPolynomial& l, MVPolynomial& r) { swap(l.index2value_, r.index2value_); }
 
  private:
-  void CheckIndex(const key_type& index) const {
-    if ((index < index_type::Zero()).any()) {
-      auto err_msg_stream = std::stringstream();
-      for (auto i = 0; i != index.size() - 1; ++i) {
-        err_msg_stream << i << ", ";
-      }
-      err_msg_stream << index[index.size() - 1];
-
-      throw std::runtime_error(
-          fmt::format("Each element of the index ({}) must be non-negative.", err_msg_stream.str())
-      );
-    }
-  }
-
   void CheckSelfIndexes() const {
-    for (const auto& index_and_value : index2value_) {
-      const auto& [index, value] = index_and_value;
-      CheckIndex(index);
+    // The last index is the lowest index of all index,
+    // so I only have to check if each of its elements is non-negative.
+    if ((index2value_.back().first < 0).any()) {
+      throw std::invalid_argument(fmt::format("Negative index not supported!"));
     }
   }
 
