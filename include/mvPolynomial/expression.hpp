@@ -1,8 +1,10 @@
 #ifndef _MVPOLYNOMIAL_POLYNOMIAL_EXPRESSION_HPP_
 #define _MVPOLYNOMIAL_POLYNOMIAL_EXPRESSION_HPP_
 
+#include <cmath>
 #include <concepts>
 #include <cstddef>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -32,7 +34,7 @@ struct FilterRvalue<const T&> {
 
 template <class T>
 requires is_const_ref_v<T> || is_rvalue_v<T>
-class RefWrapper {
+class RefWrapper final {
   using FilterResult = FilterRvalue<T>;
 
  public:
@@ -43,6 +45,14 @@ class RefWrapper {
 
   static constexpr bool is_rvalue = FilterResult::is_rvalue;
 
+  RefWrapper() = delete;
+
+  RefWrapper(const RefWrapper&)            = default;
+  RefWrapper(RefWrapper&&)                 = default;
+  RefWrapper& operator=(const RefWrapper&) = default;
+  RefWrapper& operator=(RefWrapper&&)      = default;
+  ~RefWrapper()                            = default;
+
   RefWrapper(T&& t) : t_(std::forward<T>(t)) {}
 
   Range operator()(const Domain& x) const { return t_(x); }
@@ -52,6 +62,7 @@ class RefWrapper {
   {
     return t_;
   }
+
   const Storage& read() const
   requires(is_rvalue)
   {
@@ -63,6 +74,7 @@ class RefWrapper {
   {
     return t_;
   }
+
   Storage move() &&
   requires(is_rvalue)
   {
@@ -76,7 +88,7 @@ class RefWrapper {
 // L and R may be either const& or &&.
 template <class L, class Op, class R>
 requires(is_const_ref_v<L> || is_rvalue_v<L>) && (is_const_ref_v<R> || is_rvalue_v<R>)
-class BinaryExpr {
+class BinaryExpr final {
   using LRef = RefWrapper<L>;
   using RRef = RefWrapper<L>;
 
@@ -89,6 +101,14 @@ class BinaryExpr {
 
   static constexpr bool is_l_rvalue = LRef::is_rvalue;
   static constexpr bool is_r_rvalue = RRef::is_rvalue;
+
+  BinaryExpr() = delete;
+
+  BinaryExpr(const BinaryExpr&)            = default;
+  BinaryExpr(BinaryExpr&&)                 = default;
+  BinaryExpr& operator=(const BinaryExpr&) = default;
+  BinaryExpr& operator=(BinaryExpr&&)      = default;
+  ~BinaryExpr()                            = default;
 
   BinaryExpr(L&& l, R&& r) : l_(std::forward<L>(l)), r_(std::forward<R>(r)) {}
 
@@ -173,7 +193,7 @@ struct Multiply {
 // F and G may be either const& or &&.
 template <class F, class G>
 requires(is_const_ref_v<F> || is_rvalue_v<F>) && (is_const_ref_v<G> || is_rvalue_v<G>)
-class Composition {
+class Composition final {
   using FRef = RefWrapper<F>;
   using GRef = RefWrapper<G>;
 
@@ -186,9 +206,17 @@ class Composition {
   static constexpr bool is_outer_rvalue = FRef::is_rvalue;
   static constexpr bool is_inner_rvalue = GRef::is_rvalue;
 
+  Composition() = delete;
+
+  Composition(const Composition&)            = default;
+  Composition(Composition&&)                 = default;
+  Composition& operator=(const Composition&) = default;
+  Composition& operator=(Composition&&)      = default;
+  ~Composition()                             = default;
+
   Composition(F&& f, G&& g) : f_(std::forward<F>(f)), g_(std::forward<G>(g)) {}
 
-  Range operator()(const Domain& x) { return f_(g_(x)); }
+  Range operator()(const Domain& x) const { return f_(g_(x)); }
 
   const auto& read_outer() const { return f_.read(); }
 
@@ -221,6 +249,62 @@ class Composition {
  private:
   FRef f_;
   GRef g_;
+};
+
+template <class F>
+requires is_const_ref_v<F> || is_rvalue_v<F>
+class Power {
+  using FRef = RefWrapper<F>;
+
+ public:
+  using Domain = typename F::Domain;
+  using Range  = typename F::Range;
+
+  static constexpr bool is_base_rvalue = FRef::is_rvalue;
+
+  Power() = delete;
+
+  Power(const Power&)            = default;
+  Power(Power&&)                 = default;
+  Power& operator=(const Power&) = default;
+  Power& operator=(Power&&)      = default;
+  ~Power()                       = default;
+
+  Power(F&& f, int exp) : f_(std::forward<F>(f)), exp_(exp) {
+    if (exp < 0) {
+      throw std::invalid_argument("Exponent must be non-negative!");
+    }
+  }
+
+  Range operator()(const Domain& x) const
+  requires(std::is_floating_point_v<Range>)
+  {
+    return std::pow(f_(x), exp_);
+  }
+  Range operator()(const Domain& x) const
+  requires(!std::is_floating_point_v<Range>)
+  {
+    return Pow(f_(x), exp_);
+  }
+
+  const auto& read_base() const { return f_.read(); }
+  int         read_expo() const { return exp_; }
+
+  auto move_base()
+  requires(is_base_rvalue)
+  {
+    return std::move(f_).move();
+  }
+
+  decltype(auto) move_base()
+  requires(!is_base_rvalue)
+  {
+    return std::move(f_).move();
+  }
+
+ private:
+  FRef f_;
+  int  exp_;
 };
 
 template <class L, class R>
@@ -296,6 +380,30 @@ auto D(int axis, const Composition<F, G>& comp) {
   return BinaryExpr<Composition<decltype(d_f)&&, const G&>, Multiply, decltype(d_g)&&>{
       Composition{std::move(d_f), g},
       std::move(d_g)
+  };
+}
+
+template <class F>
+auto D(int axis, Power<F>&& pow_f) {
+  auto d_f = D(axis, pow_f.read_base());
+  return BinaryExpr<BinaryExpr<int&&, Multiply, Power<F>&&>, Multiply, decltype(d_f)&&>{
+      BinaryExpr<int&&, Multiply, Power<F>&&>{
+                                              pow_f.read_expo(),
+                                              Power{pow_f.move_base(), pow_f.read_expo() - 1},
+                                              },
+      std::move(d_f)
+  };
+}
+
+template <class F>
+auto D(int axis, const Power<F>& pow_f) {
+  auto d_f = D(axis, pow_f.read_base());
+  return BinaryExpr<BinaryExpr<int&&, Multiply, const Power<F>&>, Multiply, decltype(d_f)&&>{
+      BinaryExpr<int&&, Multiply, const Power<F>&>{
+                                                   pow_f.read_expo(),
+                                                   Power{pow_f.read_base(), pow_f.read_expo() - 1},
+                                                   },
+      std::move(d_f)
   };
 }
 
