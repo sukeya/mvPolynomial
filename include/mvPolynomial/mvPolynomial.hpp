@@ -221,12 +221,27 @@ class MVPolynomial final {
   }
 
   // friend functions
-  // TODO consider tolerance.
   friend bool operator==(const MVPolynomial& l, const MVPolynomial& r) {
-    return l.index2value_ == r.index2value_;
+    if (l.size() != r.size()) {
+      return false;
+    }
+    auto l_it = l.cbegin();
+    auto r_it = r.cbegin();
+    for (std::size_t i = 0; i != l.size(); ++i) {
+      const auto& [l_idx, l_coeff] = *l_it;
+      const auto& [r_idx, r_coeff] = *r_it;
+      if ((l_idx != r_idx).any()) {
+        return false;
+      }
+      if (std::abs(l_coeff - r_coeff) >= tolerance) {
+        return false;
+      }
+      ++l_it;
+      ++r_it;
+    }
+    return true;
   }
 
-  // TODO consider tolerance.
   friend bool operator!=(const MVPolynomial& l, const MVPolynomial& r) { return !(l == r); }
 
   friend MVPolynomial operator+(const MVPolynomial& l, const MVPolynomial& r) {
