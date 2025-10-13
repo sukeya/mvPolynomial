@@ -101,17 +101,13 @@ class MVPolynomial final {
   }
 
   explicit MVPolynomial(const MVPolynomial& m, const allocator_type& a)
-      : index2value_(m.index2value_, a) {
-    CheckSelfIndexes();
-  }
+      : index2value_(m.index2value_, a) {}
 
   explicit MVPolynomial(MVPolynomial&& m, const allocator_type& a)
-      : index2value_(std::move(m.index2value_), a) {
-    CheckSelfIndexes();
-  }
+      : index2value_(std::move(m.index2value_), a) {}
 
   MVPolynomial& operator=(std::initializer_list<value_type> l) {
-    index2value_ = l;
+    index2value_.insert(l.begin(), l.end());
     CheckSelfIndexes();
     return *this;
   }
@@ -119,9 +115,6 @@ class MVPolynomial final {
   explicit MVPolynomial(mapped_type r) { index2value_.at(index_type::Zero()) = r; }
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
-
-  auto get_stored_allocator() noexcept { return index2value_.get_stored_allocator(); }
-  auto get_stored_allocator() const noexcept { return index2value_.get_stored_allocator(); }
 
   iterator       begin() noexcept { return index2value_.begin(); }
   const_iterator begin() const noexcept { return index2value_.begin(); }
