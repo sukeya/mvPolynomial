@@ -142,10 +142,6 @@ class MVPolynomial final {
 
   size_type capacity() const noexcept { return index2value_.capacity(); }
 
-  void reserve(size_type size) { return index2value_.reserve(size); }
-
-  void shrink_to_fit() { return index2value_.shrink_to_fit(); }
-
   mapped_type& operator[](const key_type& index) { return index2value_[index]; }
   mapped_type& operator[](key_type&& index) { return index2value_[index]; }
 
@@ -156,141 +152,10 @@ class MVPolynomial final {
     return const_cast<MVPolynomial*>(this)->operator[](index);
   }
 
-  template <typename M>
-  std::pair<iterator, bool> insert_or_assign(const key_type& i, M&& m) {
-    CheckIndex(i);
-    return index2value_.insert_or_assign(i, std::move(m));
-  }
-
-  template <typename M>
-  std::pair<iterator, bool> insert_or_assign(key_type&& i, M&& m) {
-    CheckIndex(i);
-    return index2value_.insert_or_assign(std::move(i), std::move(m));
-  }
-
-  template <typename M>
-  iterator insert_or_assign(const_iterator ci, const key_type& i, M&& m) {
-    CheckIndex(i);
-    return index2value_.insert_or_assign(ci, i, std::move(m));
-  }
-
-  template <typename M>
-  iterator insert_or_assign(const_iterator ci, key_type&& i, M&& m) {
-    CheckIndex(i);
-    return index2value_.insert_or_assign(ci, std::move(i), std::move(m));
-  }
-
-  iterator       nth(size_type size) noexcept { return index2value_.nth(size); }
-  const_iterator nth(size_type size) const noexcept { return index2value_.nth(size); }
-
-  size_type index_of(iterator i) noexcept { return index2value_.index_of(i); }
-  size_type index_of(const_iterator ci) const noexcept { return index2value_.index_of(ci); }
-
   mapped_type&       at(const key_type& i) { return index2value_.at(i); }
   const mapped_type& at(const key_type& i) const { return index2value_.at(i); }
 
-  template <class... Args>
-  std::pair<iterator, bool> emplace(Args&&... args) {
-    return CheckIndexOfPairOfIterAndIsInserted(index2value_.emplace(std::move(args...)));
-  }
-
-  template <class... Args>
-  iterator emplace_hint(const_iterator ci, Args&&... args) {
-    auto iter = index2value_.emplace_hint(ci, std::move(args)...);
-    CheckIndex(iter->first);
-    return iter;
-  }
-
-  template <class... Args>
-  std::pair<iterator, bool> try_emplace(const key_type& i, Args&&... args) {
-    return CheckIndexOfPairOfIterAndIsInserted(index2value_.try_emplace(i, std::move(args...)));
-  }
-
-  template <class... Args>
-  iterator try_emplace(const_iterator ci, const key_type& i, Args&&... args) {
-    auto iter = index2value_.try_emplace(ci, i, std::move(args...));
-    CheckIndex(iter->first);
-    return iter;
-  }
-
-  template <class... Args>
-  std::pair<iterator, bool> try_emplace(key_type&& i, Args&&... args) {
-    return CheckIndexOfPairOfIterAndIsInserted(
-        index2value_.try_emplace(std::move(i), std::move(args...))
-    );
-  }
-
-  template <class... Args>
-  iterator try_emplace(const_iterator ci, key_type&& i, Args&&... args) {
-    auto iter = index2value_.try_emplace(ci, std::move(i), std::move(args...));
-    CheckIndex(iter->first);
-    return iter;
-  }
-
-  std::pair<iterator, bool> insert(const value_type& i_and_v) {
-    return CheckIndexOfPairOfIterAndIsInserted(index2value_.insert(i_and_v));
-  }
-
-  std::pair<iterator, bool> insert(value_type&& i_and_v) {
-    return CheckIndexOfPairOfIterAndIsInserted(index2value_.insert(std::move(i_and_v)));
-  }
-
-  template <typename Pair>
-  std::pair<iterator BOOST_MOVE_I bool> insert(Pair&& p) {
-    return CheckIndexOfPairOfIterAndIsInserted(index2value_.insert(std::move(p)));
-  }
-
-  iterator insert(const_iterator ci, const value_type& i_and_v) {
-    auto iter = index2value_.insert(ci, i_and_v);
-    CheckIndex(iter->first);
-    return iter;
-  }
-
-  iterator insert(const_iterator ci, value_type&& i_and_v) {
-    auto iter = index2value_.insert(ci, std::move(i_and_v));
-    CheckIndex(iter->first);
-    return iter;
-  }
-
-  template <class Pair>
-  iterator insert(const_iterator ci, Pair&& p) {
-    auto iter = index2value_.insert(ci, std::move(p));
-    CheckIndex(iter->first);
-    return iter;
-  }
-
-  template <typename InputIterator>
-  void insert(InputIterator s, InputIterator e) {
-    index2value_.insert(s, e);
-    CheckSelfIndexes();
-  }
-
-  template <typename InputIterator>
-  void insert(boost::container::ordered_unique_range_t o, InputIterator s, InputIterator e) {
-    index2value_.insert(o, s, e);
-    CheckSelfIndexes();
-  }
-
-  void insert(std::initializer_list<value_type> l) {
-    index2value_.insert(l);
-    CheckSelfIndexes();
-  }
-
-  void insert(boost::container::ordered_unique_range_t o, std::initializer_list<value_type> l) {
-    index2value_.insert(o, l);
-    CheckSelfIndexes();
-  }
-
-  iterator  erase(const_iterator ci) { return index2value_.erase(ci); }
-  size_type erase(const value_type& i_and_v) { return index2value_.erase(i_and_v); }
-  iterator  erase(const_iterator s, const_iterator e) { return index2value_.erase(s, e); }
-
   void swap(MVPolynomial& m) { index2value_.swap(m.index2value_); }
-
-  void clear() noexcept { index2value_.clear(); }
-
-  key_compare   key_comp() const { return index2value_.key_comp(); }
-  value_compare value_comp() const { return index2value_.value_comp(); }
 
   iterator       find(const key_type& i) { return index2value_.find(i); }
   const_iterator find(const key_type& i) const { return index2value_.find(i); }
@@ -301,12 +166,6 @@ class MVPolynomial final {
   template <typename K>
   const_iterator find(const K& i) const {
     return index2value_.find(i);
-  }
-
-  size_type count(const key_type& i) const { return index2value_.count(i); }
-  template <typename K>
-  size_type count(const K& i) const {
-    return index2value_.count(i);
   }
 
   bool contains(const key_type& i) const { return index2value_.contains(i); }
@@ -336,39 +195,6 @@ class MVPolynomial final {
   const_iterator upper_bound(const K& i) const {
     return index2value_.upper_bound(i);
   }
-
-  std::pair<iterator, iterator> equal_range(const key_type& i) {
-    return index2value_.equal_range(i);
-  }
-
-  std::pair<const_iterator, const_iterator> equal_range(const key_type& i) const {
-    return index2value_.equal_range(i);
-  }
-
-  template <typename K>
-  std::pair<iterator, iterator> equal_range(const K& i) {
-    return index2value_.equal_range(i);
-  }
-
-  template <typename K>
-  std::pair<const_iterator, const_iterator> equal_range(const K& i) const {
-    return index2value_.equal_range(i);
-  }
-
-  sequence_type extract_sequence() { return index2value_.extract_sequence(); }
-
-  void adopt_sequence(sequence_type&& seq) { index2value_.adopt_sequence(std::move(seq)); }
-  void adopt_sequence(boost::container::ordered_unique_range_t o, sequence_type&& seq) {
-    index2value_.adopt_sequence(o, std::move(seq));
-  }
-
-  const sequence_type& sequence() const noexcept { return index2value_.sequence(); }
-
-  reference       front() { return *(index2value_.begin()); }
-  const_reference front() const { return *(index2value_.cbegin()); }
-
-  reference       back() { return *(index2value_.rbegin()); }
-  const_reference back() const { return *(index2value_.crbegin()); }
 
   MVPolynomial operator+() const { return *this; }
 
