@@ -196,6 +196,11 @@ class MVPolynomial final {
     return index2value_.upper_bound(i);
   }
 
+  index_type degree() const noexcept {
+    assert(size() != 0);
+    return *(cbegin()).first;
+  }
+
   MVPolynomial operator+() const { return *this; }
 
   MVPolynomial operator-() const {
