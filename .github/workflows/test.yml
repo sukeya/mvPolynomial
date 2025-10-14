@@ -1,31 +1,55 @@
 name: Test
-
-on:
-  push:
-    branches:
-      - main
+run-name: Test
+on: pull_request
 
 jobs:
-  ctest:
+  gcc:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up vcpkg
-        run: |
-          git clone --depth 1 -b 2025.08.27 https://github.com/microsoft/vcpkg.git vcpkg
-      - name: Install build tools
-        run: |
-          sudo apt update
-          sudo apt install -y ninja-build build-essential cmake
-          echo "$(pwd)/vcpkg" >> $GITHUB_PATH
+      - uses: actions/checkout@v5
+      - name: Set up
+        run: bash .github/scripts/setup.sh
+      - name: Install gcc
+        run: sudo apt install -y gcc
       - name: Build tests
         run: |
-          ./vcpkg/bootstrap-vcpkg.sh
-          cmake --preset CI_test
-          cd ./build/debug && ninja
-        env:
-          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          cmake --preset test_gcc -B build/debug/gcc
+          cd ./build/debug/gcc && ninja
       - name: Run tests
-        run: ctest --test-dir ./build/debug/test
+        run: |
+          ./build/debug/gcc/test/mvPolynomial_test
+
+  clang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up
+        run: bash .github/scripts/setup.sh
+      - name: Install llvm
+        run: bash .github/scripts/install_llvm.sh
+      - name: Build tests
+        run: |
+          cmake --preset test_clang -B build/debug/clang
+          cd ./build/debug/clang && ninja
+      - name: Run tests
+        run: |
+          ./build/debug/clang/test/mvPolynomial_test
+
+  clang_memory:
+    # libstdc++ and libc++ have uninitialized variables,
+    # so I skip this job temporarily.
+    if: "false"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up
+        run: bash .github/scripts/setup.sh
+      - name: Install llvm
+        run: bash .github/scripts/install_llvm.sh
+      - name: Build tests
+        run: |
+          cmake --preset test_clang_memory -B build/debug/clang/memory
+          cd ./build/debug/clang/memory && ninja
+      - name: Run tests
+        run: |
+          ./build/debug/clang/memory/test/mvPolynomial_test
