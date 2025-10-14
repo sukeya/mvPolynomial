@@ -7,36 +7,67 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_OPTIMIZE_DEPENDENCIES ON)
 
 # Library
-# Boost
-find_package(Boost CONFIG REQUIRED)
-list(APPEND extra_headers ${Boost_INCLUDE_DIRS})
+if (MVPOLYNOMIAL_BUILD_TESTS)
+  FetchContent_Declare(
+    eigen3
+    GIT_REPOSITORY https://github.com/boostorg/test.git
+    GIT_TAG        cfd3a7e8749752f5a9d20266c1fc7afdb9b1e173 # 5.0.0
+    OVERRIDE_FIND_PACKAGE
+  )
+  FetchContent_Declare(
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG        e424e3f2e607da02742f73db84873b8084fc714c # 12.0.0
+    OVERRIDE_FIND_PACKAGE
+  )
+  FetchContent_MakeAvailable(eigen3 fmt)
+else
+  find_package(Eigen3 5.0.0 CONFIG REQUIRED)
+  find_package(fmt 12.0.0 CONFIG REQUIRED)
+endif()
 
-# Eigen
-find_package(Eigen3 CONFIG REQUIRED NO_MODULE)
 list(APPEND extra_libs Eigen3::Eigen)
-
-# fmt
-find_package(fmt CONFIG REQUIRED)
 list(APPEND extra_libs fmt::fmt)
 
-add_library(mvPolynomial_compiler_flags INTERFACE)
-target_compile_features(mvPolynomial_compiler_flags INTERFACE cxx_std_20)
+# To avoid add_subdirectory,
+FetchContent_Declare(
+  platanus
+  GIT_REPOSITORY https://github.com/boostorg/test.git
+  GIT_TAG        origin/main # TODO Fix commit hash
+)
+list(APPEND extra_libs platanus)
+
 
 add_library(${PROJECT_NAME} INTERFACE)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 target_include_directories(
   ${PROJECT_NAME}
   INTERFACE
-    ${extra_headers}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_link_libraries(
   ${PROJECT_NAME}
   INTERFACE
     ${extra_libs}
-    mvPolynomial_compiler_flags
 )
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(gcc "$<COMPILE_LANG_AND_ID:CXX,GNU>")
+set(clang "$<COMPILE_LANG_AND_ID:CXX,Clang>")
+set(msvc "$<COMPILE_LANG_AND_ID:CXX,MSVC>")
+
+set(gcc_like $<OR:${gcc},${clang})
+
 if (MVPOLYNOMIAL_BUILD_TESTS)
-  include(CTest)
+  enable_testing()
+
+  FetchContent_Declare(
+    boost_unit_test
+    GIT_REPOSITORY https://github.com/boostorg/test.git
+    GIT_TAG        cfd3a7e8749752f5a9d20266c1fc7afdb9b1e173 # boost-1.89.0
+    OVERRIDE_FIND_PACKAGE
+  )
+  FetchContent_MakeAvailable(boost_unit_test)
+
   add_subdirectory(test)
 endif()
