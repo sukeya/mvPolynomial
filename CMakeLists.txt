@@ -7,21 +7,28 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_OPTIMIZE_DEPENDENCIES ON)
 
 # Library
+include(FetchContent)
 if (MVPOLYNOMIAL_BUILD_TESTS)
   FetchContent_Declare(
     eigen3
-    GIT_REPOSITORY https://github.com/boostorg/test.git
-    GIT_TAG        cfd3a7e8749752f5a9d20266c1fc7afdb9b1e173 # 5.0.0
+    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+    GIT_TAG        549bf8c75b6aae071cde2f28aa48f16ee3ae60b0 # 5.0.0
     OVERRIDE_FIND_PACKAGE
   )
+  # The reason why I use CACHE INTERNAL is written in the following link:
+  # https://cmake.org/cmake/help/latest/module/FetchContent.html#overriding-where-to-find-cmakelists-txt
+  set(EIGEN_BUILD_TESTING OFF CACHE INTERNAL "")
+  set(EIGEN_BUILD_CMAKE_PACKAGE ON CACHE INTERNAL "")
+  FetchContent_MakeAvailable(eigen3)
+
   FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     GIT_TAG        e424e3f2e607da02742f73db84873b8084fc714c # 12.0.0
     OVERRIDE_FIND_PACKAGE
   )
-  FetchContent_MakeAvailable(eigen3 fmt)
-else
+  FetchContent_MakeAvailable(fmt)
+else()
   find_package(Eigen3 5.0.0 CONFIG REQUIRED)
   find_package(fmt 12.0.0 CONFIG REQUIRED)
 endif()
@@ -32,7 +39,7 @@ list(APPEND extra_libs fmt::fmt)
 # To avoid add_subdirectory,
 FetchContent_Declare(
   platanus
-  GIT_REPOSITORY https://github.com/boostorg/test.git
+  GIT_REPOSITORY https://github.com/sukeya/platanus.git
   GIT_TAG        origin/main # TODO Fix commit hash
 )
 list(APPEND extra_libs platanus)
@@ -62,12 +69,12 @@ if (MVPOLYNOMIAL_BUILD_TESTS)
   enable_testing()
 
   FetchContent_Declare(
-    boost_unit_test
-    GIT_REPOSITORY https://github.com/boostorg/test.git
-    GIT_TAG        cfd3a7e8749752f5a9d20266c1fc7afdb9b1e173 # boost-1.89.0
+    boost
+    GIT_REPOSITORY https://github.com/boostorg/boost.git
+    GIT_TAG        ef7fea34711a189472893b88205b1dd3c275677b # boost-1.89.0
     OVERRIDE_FIND_PACKAGE
   )
-  FetchContent_MakeAvailable(boost_unit_test)
+  FetchContent_MakeAvailable(boost)
 
   add_subdirectory(test)
 endif()
