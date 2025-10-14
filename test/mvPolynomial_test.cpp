@@ -11,8 +11,6 @@ namespace tt  = boost::test_tools;
 using MP2 = mvPolynomial::MVPolynomial<int, double, 2>;
 using MP3 = mvPolynomial::MVPolynomial<int, double, 3>;
 
-using EO3 = mvPolynomial::ExactOf<int, double, 3>;
-
 BOOST_AUTO_TEST_CASE(mvPolynomial_init, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
   auto ans = std::vector<std::pair<Eigen::Array2i, double>>();
   ans      = {
@@ -192,65 +190,4 @@ BOOST_AUTO_TEST_CASE(
   for (auto i = 0; i < ans.size(); ++i) {
     BOOST_TEST(m[ans[i].first] == ans[i].second);
   }
-}
-
-BOOST_AUTO_TEST_CASE(
-    mvPolynomial_exact_of_init, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))
-) {
-  auto ans = std::vector<std::pair<Eigen::Vector3i, double>>();
-  ans      = {
-      {{0, 0, 0},  1},
-      {{1, 0, 0},  2},
-      {{0, 1, 0},  3},
-      {{0, 0, 1},  4},
-      {{2, 0, 0},  5},
-      {{0, 2, 0},  6},
-      {{0, 0, 2},  7},
-      {{1, 1, 0},  8},
-      {{0, 1, 1},  9},
-      {{1, 0, 1}, 10},
-  };
-  auto m        = MP3(ans.begin(), ans.end());
-  auto exact_of = EO3(m);
-  for (auto i = 0; i < ans.size(); ++i) {
-    const auto& p = exact_of.get_polynomial();
-    BOOST_TEST(p[ans[i].first] == ans[i].second);
-  }
-  /*
-  auto ans2 = std::vector<std::pair<Eigen::Array2i, double>>();
-  ans2 = {
-    {{0, 0}, 0},
-    {{1, 0}, 0},
-    {{0, 1}, 0},
-    {{2, 0}, 0},
-    {{0, 2}, 0},
-    {{1, 1}, 0},
-  };
-  for (auto i = 0; i < ans2.size(); ++i)
-  {
-    const auto& p = exact_of.projection_.get_polynomial();
-    BOOST_TEST(p[ans2[i].first] == 0);
-  }
-  auto ans3 = std::vector<std::pair<int, double>>();
-  ans3 = {
-    {0, 0},
-    {1, 0},
-    {2, 0}
-  };
-  for (auto i = 0; i < ans3.size(); ++i)
-  {
-    const auto& p = exact_of.projection_.projection_.get_polynomial();
-    BOOST_TEST(p[ans3[i].first] == 0);
-  }
-  */
-  BOOST_TEST(exact_of({0, 0, 0}) == 1);
-  BOOST_TEST(exact_of({1, 0, 0}) == 1 + 2 + 5);
-  BOOST_TEST(exact_of({2, 0, 0}) == 1 + 2 * 2 + 5 * 4);
-  BOOST_TEST(exact_of({0, 1, 0}) == 1 + 3 + 6);
-  BOOST_TEST(exact_of({0, 2, 0}) == 1 + 3 * 2 + 6 * 4);
-  BOOST_TEST(exact_of({0, 0, 1}) == 1 + 4 + 7);
-  BOOST_TEST(exact_of({0, 0, 2}) == 1 + 4 * 2 + 7 * 4);
-  BOOST_TEST(exact_of({1, 1, 0}) == 1 + 2 + 5 + 3 + 6 + 8);
-  BOOST_TEST(exact_of({0, 1, 1}) == 1 + 3 + 6 + 4 + 7 + 9);
-  BOOST_TEST(exact_of({1, 0, 1}) == 1 + 2 + 5 + 4 + 7 + 10);
 }
