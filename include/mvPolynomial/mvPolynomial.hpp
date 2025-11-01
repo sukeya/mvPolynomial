@@ -192,6 +192,26 @@ class MVPolynomial final {
 
   void swap(MVPolynomial& m) { index2value_.swap(m.index2value_); }
 
+  // I didn't want to add insert and erase, but for efficiency, I did.
+  std::pair<iterator, bool> insert(const value_type& x) { return index2value_.insert(x); }
+  std::pair<iterator, bool> insert(value_type&& x) { return index2value_.insert(std::move(x)); }
+
+  iterator insert(iterator hint, const value_type& x) { return index2value_.insert(hint, x); }
+  iterator insert(iterator hint, value_type&& x) { return index2value_.insert(hint, std::move(x)); }
+
+  template <typename InputIterator>
+  void insert(InputIterator b, InputIterator e) {
+    index2value_.insert(b, e);
+  }
+
+  void insert(std::initializer_list<value_type> list) {
+    index2value_.insert(list.begin(), list.end());
+  }
+
+  size_type erase(const key_type& key) { return index2value_.erase(key); }
+  iterator  erase(const iterator& iter) { return index2value_.erase(iter); }
+  size_type erase(const iterator& b, const iterator& e) { return index2value_.erase(b, e); }
+
   iterator       find(const key_type& i) { return index2value_.find(i); }
   const_iterator find(const key_type& i) const { return index2value_.find(i); }
   template <typename K>
