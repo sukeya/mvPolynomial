@@ -69,13 +69,60 @@ set(gcc_like $<OR:${gcc},${clang})
 if (MVPOLYNOMIAL_BUILD_TESTS)
   enable_testing()
 
+  set(boost_test_dependencies
+    algorithm
+    array
+    assert
+    bind
+    config
+    concept_check
+    container_hash
+    conversion
+    core
+    detail
+    describe
+    exception
+    function
+    functional
+    function_types
+    fusion
+    io
+    iterator
+    mp11
+    mpl
+    numeric_conversion
+    optional
+    predef
+    preprocessor
+    regex
+    range
+    smart_ptr
+    static_assert
+    throw_exception
+    tuple
+    typeof
+    type_traits
+    unordered
+    utility
+  )
+
+  foreach(deplib ${boost_test_dependencies})
+    FetchContent_Declare(
+      ${deplib}
+      GIT_REPOSITORY https://github.com/boostorg/${deplib}.git
+      GIT_TAG        boost-1.89.0
+      OVERRIDE_FIND_PACKAGE
+    )
+    FetchContent_MakeAvailable(${deplib})
+  endforeach()
+
   FetchContent_Declare(
-    boost
-    GIT_REPOSITORY https://github.com/boostorg/boost.git
-    GIT_TAG        ef7fea34711a189472893b88205b1dd3c275677b # boost-1.89.0
+    boost_unit_test
+    GIT_REPOSITORY https://github.com/boostorg/test.git
+    GIT_TAG        boost-1.89.0
     OVERRIDE_FIND_PACKAGE
   )
-  FetchContent_MakeAvailable(boost)
+  FetchContent_MakeAvailable(boost_unit_test)
 
   add_subdirectory(test)
 endif()
