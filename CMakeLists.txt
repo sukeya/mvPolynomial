@@ -7,36 +7,122 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_OPTIMIZE_DEPENDENCIES ON)
 
 # Library
-# Boost
-find_package(Boost CONFIG REQUIRED)
-list(APPEND extra_headers ${Boost_INCLUDE_DIRS})
+include(FetchContent)
+if (MVPOLYNOMIAL_BUILD_TESTS)
+  FetchContent_Declare(
+    eigen3
+    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+    GIT_TAG        549bf8c75b6aae071cde2f28aa48f16ee3ae60b0 # 5.0.0
+    OVERRIDE_FIND_PACKAGE
+  )
+  # The reason why I use CACHE INTERNAL is written in the following link:
+  # https://cmake.org/cmake/help/latest/module/FetchContent.html#overriding-where-to-find-cmakelists-txt
+  set(EIGEN_BUILD_TESTING OFF CACHE INTERNAL "")
+  set(EIGEN_BUILD_CMAKE_PACKAGE ON CACHE INTERNAL "")
+  FetchContent_MakeAvailable(eigen3)
 
-# Eigen
-find_package(Eigen3 CONFIG REQUIRED NO_MODULE)
+  FetchContent_Declare(
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG        e424e3f2e607da02742f73db84873b8084fc714c # 12.0.0
+    OVERRIDE_FIND_PACKAGE
+  )
+  FetchContent_MakeAvailable(fmt)
+else()
+  find_package(Eigen3 5.0.0 CONFIG REQUIRED)
+  find_package(fmt 12.0.0 CONFIG REQUIRED)
+endif()
+
 list(APPEND extra_libs Eigen3::Eigen)
-
-# fmt
-find_package(fmt CONFIG REQUIRED)
 list(APPEND extra_libs fmt::fmt)
 
-add_library(mvPolynomial_compiler_flags INTERFACE)
-target_compile_features(mvPolynomial_compiler_flags INTERFACE cxx_std_20)
+# To avoid add_subdirectory,
+FetchContent_Declare(
+  platanus
+  GIT_REPOSITORY https://github.com/sukeya/platanus.git
+  GIT_TAG        23a9ba9cd6bfe38b01fd7e87e28ae42dd8b2744f # origin/main
+)
+FetchContent_MakeAvailable(platanus)
+list(APPEND extra_libs platanus)
+
 
 add_library(${PROJECT_NAME} INTERFACE)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 target_include_directories(
   ${PROJECT_NAME}
   INTERFACE
-    ${extra_headers}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_link_libraries(
   ${PROJECT_NAME}
   INTERFACE
     ${extra_libs}
-    mvPolynomial_compiler_flags
 )
 
-if (BUILD_TESTS)
-  include(CTest)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(gcc "$<COMPILE_LANG_AND_ID:CXX,GNU>")
+set(clang "$<COMPILE_LANG_AND_ID:CXX,Clang>")
+set(msvc "$<COMPILE_LANG_AND_ID:CXX,MSVC>")
+
+set(gcc_like $<OR:${gcc},${clang})
+
+if (MVPOLYNOMIAL_BUILD_TESTS)
+  enable_testing()
+
+  set(boost_test_dependencies
+    algorithm
+    array
+    assert
+    bind
+    config
+    concept_check
+    container_hash
+    conversion
+    core
+    detail
+    describe
+    exception
+    function
+    functional
+    function_types
+    fusion
+    io
+    iterator
+    mp11
+    mpl
+    numeric_conversion
+    optional
+    predef
+    preprocessor
+    regex
+    range
+    smart_ptr
+    static_assert
+    throw_exception
+    tuple
+    typeof
+    type_traits
+    unordered
+    utility
+  )
+
+  foreach(deplib ${boost_test_dependencies})
+    FetchContent_Declare(
+      ${deplib}
+      GIT_REPOSITORY https://github.com/boostorg/${deplib}.git
+      GIT_TAG        boost-1.89.0
+      OVERRIDE_FIND_PACKAGE
+    )
+    FetchContent_MakeAvailable(${deplib})
+  endforeach()
+
+  FetchContent_Declare(
+    boost_unit_test
+    GIT_REPOSITORY https://github.com/boostorg/test.git
+    GIT_TAG        boost-1.89.0
+    OVERRIDE_FIND_PACKAGE
+  )
+  FetchContent_MakeAvailable(boost_unit_test)
+
   add_subdirectory(test)
 endif()

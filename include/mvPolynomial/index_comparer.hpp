@@ -5,6 +5,7 @@
 
 #include <concepts>
 #include <compare>
+#include <cstddef>
 
 namespace mvPolynomial {
 /**
@@ -12,33 +13,24 @@ namespace mvPolynomial {
  * \tparam IntType the type of elements of indices.
  * \tparam D the dimension of indices.
  */
-template <std::signed_integral IntType, int D>
-class IndexComparer {
+template <std::signed_integral Int_, int D>
+class IndexComparer final {
  public:
   static_assert(D > 0, "IndexComparer: the dimension must be positive.");
 
-  using Index = IndexType<IntType, D>;
+  using Int   = Int_;
+  using Index = IndexType<Int, D>;
+
+  static constexpr int dim = D;
 
   /**
-   * \brief If the elems of lhd are equal to that of rhd until i th time and lhd[i] is greater than
-   * rhd[i], return true: otherwise, false.
+   * \brief If lhd[i] == rhd[i] for i = 0, ..., N - 1 and lhd[N] > rhd[N],
+   * return greater: if lhd[N] < rhd[N], return less: otherwise, return equal.
    * \param[in] lhd an index
    * \param[in] rhd an index
    */
-  constexpr bool operator()(const Index& lhd, const Index& rhd) const noexcept {
-    for (std::size_t i = 0; i != lhd.size(); ++i) {
-      auto comp = lhd[i] <=> rhd[i];
-      if (comp > 0) {
-        return true;
-      } else if (comp < 0) {
-        return false;
-      }
-    }
-    return false;
-  }
-
-  constexpr std::strong_ordering get_ordering(const Index& lhd, const Index& rhd) const noexcept {
-    for (std::size_t i = 0; i != lhd.size(); ++i) {
+  static constexpr std::strong_ordering Compare(const Index& lhd, const Index& rhd) {
+    for (std::size_t i = 0; i < lhd.size(); ++i) {
       auto comp = lhd[i] <=> rhd[i];
       if (comp > 0) {
         return std::strong_ordering::greater;
@@ -48,14 +40,23 @@ class IndexComparer {
     }
     return std::strong_ordering::equal;
   }
-};
 
-template <std::signed_integral IntType>
-class IndexComparer<IntType, 1> {
- public:
-  using Index = IntType;
-
-  constexpr bool operator()(Index lhd, Index rhd) const noexcept { return lhd > rhd; }
+  /**
+   * \brief If lhd[i] == rhd[i] for i = 0, ..., N - 1 and lhd[N] > rhd[N],
+   * return true: otherwise, false.
+   * \param[in] lhd an index
+   * \param[in] rhd an index
+   */
+  bool operator()(const Index& lhd, const Index& rhd) const {
+    for (std::size_t i = 0; i < lhd.size(); ++i) {
+      if (lhd[i] > rhd[i]) {
+        return true;
+      } else if (lhd[i] < rhd[i]) {
+        return false;
+      }
+    }
+    return false;
+  }
 };
 }  // namespace mvPolynomial
 
