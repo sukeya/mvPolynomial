@@ -30,7 +30,7 @@ class IndexComparer final {
    * \param[in] rhd an index
    */
   static constexpr std::strong_ordering Compare(const Index& lhd, const Index& rhd) {
-    for (std::size_t i = 0; i != lhd.size(); ++i) {
+    for (std::size_t i = 0; i < lhd.size(); ++i) {
       auto comp = lhd[i] <=> rhd[i];
       if (comp > 0) {
         return std::strong_ordering::greater;
@@ -47,10 +47,12 @@ class IndexComparer final {
    * \param[in] lhd an index
    * \param[in] rhd an index
    */
-  static constexpr bool IsGreater(const Index& lhd, const Index& rhd) {
-    for (std::size_t i = 0; i != lhd.size(); ++i) {
+  bool operator()(const Index& lhd, const Index& rhd) const {
+    for (std::size_t i = 0; i < lhd.size(); ++i) {
       if (lhd[i] > rhd[i]) {
         return true;
+      } else if (lhd[i] < rhd[i]) {
+        return false;
       }
     }
     return false;
