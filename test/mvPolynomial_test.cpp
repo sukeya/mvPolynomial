@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(mvPolynomial_init, *utf::tolerance(tt::fpc::percent_toleran
 
   auto m = MP2(ans.begin(), ans.end());
   for (auto i = 0; i < ans.size(); ++i) {
-    BOOST_TEST(m[ans[i].first] == ans[i].second);
+    BOOST_TEST(m.at(ans[i].first) == ans[i].second);
   }
 }
 
@@ -40,8 +40,8 @@ BOOST_AUTO_TEST_CASE(mvPolynomial_Of, *utf::tolerance(tt::fpc::percent_tolerance
   };
 
   auto m = MP2(ans.begin(), ans.end());
-  BOOST_TEST(Of(m, Eigen::Vector2d::Zero()) == 1);
-  BOOST_TEST(Of(m, {2, 3}) == 112);
+  BOOST_TEST(m(Eigen::Vector2d::Zero()) == 1);
+  BOOST_TEST(m(Eigen::Vector2d({2, 3})) == 112);
 }
 
 BOOST_AUTO_TEST_CASE(mvPolynomial_derivative, *utf::tolerance(tt::fpc::percent_tolerance(1e-10))) {
