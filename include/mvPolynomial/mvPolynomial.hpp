@@ -271,6 +271,36 @@ class MVPolynomial final {
     return m;
   }
 
+  MVPolynomial operator-() && {
+    for (auto& i_and_v : *this) {
+      auto& [_, v] = i_and_v;
+      v            = -v;
+    }
+    return std::move(*this);
+  }
+
+  MVPolynomial& operator+=(const MVPolynomial& r) {
+    for (const auto& [idx, coeff] : r) {
+      if (contains(idx)) {
+        (*this)[idx] += coeff;
+      } else {
+        (*this)[idx] = coeff;
+      }
+    }
+    return *this;
+  }
+
+  MVPolynomial& operator-=(const MVPolynomial& r) {
+    for (const auto& [idx, coeff] : r) {
+      if (contains(idx)) {
+        (*this)[idx] -= coeff;
+      } else {
+        (*this)[idx] = -coeff;
+      }
+    }
+    return *this;
+  }
+
   MVPolynomial& operator*=(mapped_type r) {
     for (auto& i_and_v : index2value_) {
       auto& [_, v] = i_and_v;
@@ -304,27 +334,29 @@ class MVPolynomial final {
   friend bool operator!=(const MVPolynomial& l, const MVPolynomial& r) { return !(l == r); }
 
   friend MVPolynomial operator+(const MVPolynomial& l, const MVPolynomial& r) {
-    auto sum = MVPolynomial(l);
-    for (const auto& [idx, coeff] : r) {
-      if (sum.contains(idx)) {
-        sum[idx] += coeff;
-      } else {
-        sum[idx] = coeff;
-      }
-    }
-    return sum;
+    return MVPolynomial(l) + r;
+  }
+
+  friend MVPolynomial operator+(MVPolynomial&& l, const MVPolynomial& r) {
+    l += r;
+    return std::move(l);
+  }
+
+  friend MVPolynomial operator+(const MVPolynomial& l, MVPolynomial&& r) {
+    return std::move(r) + l;
   }
 
   friend MVPolynomial operator-(const MVPolynomial& l, const MVPolynomial& r) {
-    auto sub = MVPolynomial(l);
-    for (const auto& [idx, coeff] : r) {
-      if (sub.contains(idx)) {
-        sub[idx] -= coeff;
-      } else {
-        sub[idx] = -coeff;
-      }
-    }
-    return sub;
+    return MVPolynomial(l) - r;
+  }
+
+  friend MVPolynomial operator-(MVPolynomial&& l, const MVPolynomial& r) {
+    l -= r;
+    return std::move(l);
+  }
+
+  friend MVPolynomial operator-(const MVPolynomial& l, MVPolynomial&& r) {
+    return -std::move(r) + l;
   }
 
   friend MVPolynomial operator*(const MVPolynomial& l, const MVPolynomial& r) {
