@@ -262,7 +262,7 @@ class MVPolynomial final {
 
   MVPolynomial operator+() const { return *this; }
 
-  MVPolynomial operator-() const {
+  MVPolynomial operator-() const& {
     auto m = MVPolynomial(*this);
     for (auto& i_and_v : m) {
       auto& [_, v] = i_and_v;
