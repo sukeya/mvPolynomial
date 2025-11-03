@@ -421,7 +421,7 @@ template <std::signed_integral IntType, std::floating_point R, int Dim, class Al
 R MVPolynomial<IntType, R, Dim, Allocator>::tolerance = std::numeric_limits<R>::min_exponent10;
 
 template <std::signed_integral IntType, std::floating_point R, int Dim, class Allocator>
-auto D(const MVPolynomial<IntType, R, Dim, Allocator>& p, int axis) {
+auto D(int axis, const MVPolynomial<IntType, R, Dim, Allocator>& p) {
   using MP            = MVPolynomial<IntType, R, Dim, Allocator>;
   using Index         = typename MP::index_type;
   using IndexAndCoeff = typename MP::value_type;
