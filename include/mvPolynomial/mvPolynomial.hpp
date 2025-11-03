@@ -50,7 +50,6 @@ auto OfImpl(Iterator begin, Iterator end, int dim, int axis, const Coord& x) {
             return pair.first[axis] == first_index[axis];
           }
       );
-      const auto& [p_index, p_coeff] = *partition_point;
       sum += OfImpl(begin, partition_point, dim, axis + 1, x);
       if (partition_point == end) {
         // The calculation ends.
@@ -259,7 +258,7 @@ class MVPolynomial final {
     return index2value_.upper_bound(i);
   }
 
-  R operator()(const coord_type& x) const { return OfImpl(cbegin(), cend(), dim, 0, x); }
+  R operator()(const coord_type& x) const { return OfImpl(crbegin(), crend(), dim, 0, x); }
 
   MVPolynomial operator+() const { return *this; }
 
@@ -352,9 +351,9 @@ class MVPolynomial final {
 
  private:
   void CheckSelfIndexes() const {
-    // The last index is the lowest index of all index,
+    // The first index is the lowest index of all index,
     // so I only have to check if each of its elements is non-negative.
-    if ((std::prev(index2value_.end())->first < 0).any()) {
+    if ((index2value_.begin()->first < 0).any()) {
       throw std::invalid_argument(fmt::format("Negative index not supported!"));
     }
   }
