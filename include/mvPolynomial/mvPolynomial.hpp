@@ -3,6 +3,7 @@
 
 #include "mvPolynomial/type.hpp"
 #include "mvPolynomial/index_comparer.hpp"
+#include "mvPolynomial/expression.hpp"
 
 #include <algorithm>
 #include <iterator>
