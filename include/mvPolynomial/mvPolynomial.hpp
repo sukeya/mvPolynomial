@@ -1,6 +1,7 @@
 #ifndef _MVPOLYNOMIAL_MVPOLYNOMIAL_HPP_
 #define _MVPOLYNOMIAL_MVPOLYNOMIAL_HPP_
 
+#include "expression.hpp"
 #include "mvPolynomial/type.hpp"
 #include "mvPolynomial/index_comparer.hpp"
 #include "mvPolynomial/expression.hpp"
@@ -108,6 +109,9 @@ class MVPolynomial final {
   using const_iterator         = IndexContainer::const_iterator;
   using reverse_iterator       = IndexContainer::reverse_iterator;
   using const_reverse_iterator = IndexContainer::const_reverse_iterator;
+
+  using Domain = coord_type;
+  using Range  = R;
 
   MVPolynomial(const MVPolynomial& other)            = default;
   MVPolynomial& operator=(const MVPolynomial& other) = default;
@@ -372,37 +376,18 @@ class MVPolynomial final {
 
   friend MVPolynomial operator-(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) - r; }
 
-  friend MVPolynomial operator*(const MVPolynomial& l, const MVPolynomial& r) {
-    auto comparer = l.key_comp();
+  friend auto operator*(const MVPolynomial& l, const MVPolynomial& r) {
+    return BinaryExpr<const MVPolynomial&, Multiply, const MVPolynomial&>(l, r);
+  }
 
-    if (l.size() == 1) {
-      auto mul = r;
-      mul *= l;
-      return mul;
-    }
-    if (r.size() == 1) {
-      return r * l;
-    }
+  friend auto operator*(MVPolynomial&& l, const MVPolynomial& r) {
+    return BinaryExpr<MVPolynomial&&, Multiply, const MVPolynomial&>(std::move(l), r);
+  }
 
-    auto mul = MVPolynomial(l.get_allocator());
-    // Clear
-    mul.erase(mul.begin());
-    // Calculate all product of each l's term and r's term.
-    for (const auto& l_p : l) {
-      const auto& [l_idx, l_v] = l_p;
-      for (const auto& r_p : r) {
-        const auto& [r_idx, r_v] = r_p;
-        const auto idx           = l_idx + r_idx;
-        const auto v             = l_v * r_v;
-        if (mul.contains(idx)) {
-          mul[idx] += v;
-        } else {
-          mul[idx] = v;
-        }
-      }
-    }
+  friend auto operator*(const MVPolynomial& l, MVPolynomial&& r) { return std::move(r) * l; }
 
-    return mul;
+  friend auto operator*(MVPolynomial&& l, MVPolynomial&& r) {
+    return BinaryExpr<MVPolynomial&&, Multiply, MVPolynomial&&>(std::move(l), std::move(r));
   }
 
  private:
@@ -468,6 +453,68 @@ auto Integrate(MVPolynomial<IntType, R, D, Allocator>&& p, int axis) {
 template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
 auto Integrate(const MVPolynomial<IntType, R, D, Allocator>& p, int axis) {
   return Integrate(MVPolynomial<IntType, R, D, Allocator>(p), axis);
+}
+
+template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
+MVPolynomial<IntType, R, D, Allocator> Simplify(
+    const BinaryExpr<
+        const MVPolynomial<IntType, R, D, Allocator>&,
+        Multiply,
+        const MVPolynomial<IntType, R, D, Allocator>&>& expr
+) {
+  const auto& l = expr.read_l();
+  const auto& r = expr.read_r();
+
+  auto mul = MVPolynomial<IntType, R, D, Allocator>(l.get_allocator());
+  // Calculate all product of each l's term and r's term.
+  for (const auto& l_p : l) {
+    const auto& [l_idx, l_v] = l_p;
+    for (const auto& r_p : r) {
+      const auto& [r_idx, r_v] = r_p;
+      const auto idx           = l_idx + r_idx;
+      const auto v             = l_v * r_v;
+      if (mul.contains(idx)) {
+        mul[idx] += v;
+      } else {
+        mul[idx] = v;
+      }
+    }
+  }
+
+  return mul;
+}
+
+template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
+MVPolynomial<IntType, R, D, Allocator> Simplify(
+    const BinaryExpr<
+        const MVPolynomial<IntType, R, D, Allocator>&,
+        Multiply,
+        MVPolynomial<IntType, R, D, Allocator>&&>& expr
+) {
+  using MVP = MVPolynomial<IntType, R, D, Allocator>;
+  return Simplify(BinaryExpr<const MVP&, Multiply, const MVP&>{expr.read_l(), expr.read_r()});
+}
+
+template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
+MVPolynomial<IntType, R, D, Allocator> Simplify(
+    const BinaryExpr<
+        MVPolynomial<IntType, R, D, Allocator>&&,
+        Multiply,
+        const MVPolynomial<IntType, R, D, Allocator>&>& expr
+) {
+  using MVP = MVPolynomial<IntType, R, D, Allocator>;
+  return Simplify(BinaryExpr<const MVP&, Multiply, const MVP&>{expr.read_l(), expr.read_r()});
+}
+
+template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
+MVPolynomial<IntType, R, D, Allocator> Simplify(
+    const BinaryExpr<
+        MVPolynomial<IntType, R, D, Allocator>&&,
+        Multiply,
+        MVPolynomial<IntType, R, D, Allocator>&&>& expr
+) {
+  using MVP = MVPolynomial<IntType, R, D, Allocator>;
+  return Simplify(BinaryExpr<const MVP&, Multiply, const MVP&>{expr.read_l(), expr.read_r()});
 }
 
 }  // namespace mvPolynomial

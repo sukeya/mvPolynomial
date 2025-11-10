@@ -95,7 +95,7 @@ TEST_CASE("D", "[mvPolynomial]") {
         {{0, 1},  4},
         {{1, 0}, 10}
     });
-    auto dm0 = mvPolynomial::D(m, 0);
+    auto dm0 = mvPolynomial::D(0, m);
 
     REQUIRE(dm0.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
@@ -109,7 +109,7 @@ TEST_CASE("D", "[mvPolynomial]") {
         {{1, 0},  4},
         {{0, 1}, 12}
     });
-    auto dm1 = mvPolynomial::D(m, 1);
+    auto dm1 = mvPolynomial::D(1, m);
 
     REQUIRE(dm1.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
@@ -188,7 +188,7 @@ TEST_CASE("multiply", "[mvPolynomial]") {
       {{1, 1}, 11},
   });
 
-  auto prod = l * r;
+  auto prod = mvPolynomial::Simplify(l * r);
 
   REQUIRE(prod.size() == ans.size());
   for (size_t i = 0; i < ans.size(); ++i) {
