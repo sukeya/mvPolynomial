@@ -311,12 +311,14 @@ class MVPolynomial final {
 
   // friend functions
   friend bool operator==(const MVPolynomial& l, const MVPolynomial& r) {
+    using size_type = typename MVPolynomial::size_type;
+
     if (l.size() != r.size()) {
       return false;
     }
     auto l_it = l.cbegin();
     auto r_it = r.cbegin();
-    for (std::size_t i = 0; i != l.size(); ++i) {
+    for (size_type i = 0; i != l.size(); ++i) {
       const auto& [l_idx, l_coeff] = *l_it;
       const auto& [r_idx, r_coeff] = *r_it;
       if ((l_idx != r_idx).any()) {
