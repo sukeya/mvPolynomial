@@ -13,7 +13,7 @@
 #include "platanus/btree_map.hpp"
 
 namespace mvPolynomial {
-namespace {
+namespace details {
 void CheckAxis(int dim, int axis) {
   if (axis < 0 || axis >= dim) {
     throw std::runtime_error(
@@ -60,7 +60,7 @@ auto OfImpl(Iterator begin, Iterator end, int dim, int axis, const Coord& x) {
     return sum;
   }
 }
-}  // namespace
+}  // namespace details
 
 template <
     std::signed_integral IntType,
@@ -258,7 +258,7 @@ class MVPolynomial final {
     return index2value_.upper_bound(i);
   }
 
-  R operator()(const coord_type& x) const { return OfImpl(crbegin(), crend(), dim, 0, x); }
+  R operator()(const coord_type& x) const { return details::OfImpl(crbegin(), crend(), dim, 0, x); }
 
   MVPolynomial operator+() const { return *this; }
 
@@ -311,12 +311,14 @@ class MVPolynomial final {
 
   // friend functions
   friend bool operator==(const MVPolynomial& l, const MVPolynomial& r) {
+    using size_type = typename MVPolynomial::size_type;
+
     if (l.size() != r.size()) {
       return false;
     }
     auto l_it = l.cbegin();
     auto r_it = r.cbegin();
-    for (std::size_t i = 0; i != l.size(); ++i) {
+    for (size_type i = 0; i != l.size(); ++i) {
       const auto& [l_idx, l_coeff] = *l_it;
       const auto& [r_idx, r_coeff] = *r_it;
       if ((l_idx != r_idx).any()) {
@@ -402,7 +404,7 @@ auto D(const MVPolynomial<IntType, R, Dim, Allocator>& p, int axis) {
   using Index         = typename MP::index_type;
   using IndexAndCoeff = typename MP::value_type;
 
-  CheckAxis(MP::dim, axis);
+  details::CheckAxis(MP::dim, axis);
 
   auto dp   = MP{p.get_allocator()};
   auto p_it = p.begin();
@@ -431,7 +433,7 @@ template <std::signed_integral IntType, std::floating_point R, int D, class Allo
 auto Integrate(MVPolynomial<IntType, R, D, Allocator>&& p, int axis) {
   using MP = MVPolynomial<IntType, R, D, Allocator>;
 
-  CheckAxis(D, axis);
+  details::CheckAxis(D, axis);
 
   for (auto& index_and_value : p) {
     auto& value = index_and_value.second;
