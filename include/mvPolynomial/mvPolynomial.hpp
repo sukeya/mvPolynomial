@@ -455,6 +455,17 @@ auto Integrate(const MVPolynomial<IntType, R, D, Allocator>& p, int axis) {
   return Integrate(MVPolynomial<IntType, R, D, Allocator>(p), axis);
 }
 
+// Simplyfy for MVPolynomial
+template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
+auto Simplify(const MVPolynomial<IntType, R, D, Allocator>& mvp) {
+  return mvp;
+}
+
+template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
+auto Simplify(MVPolynomial<IntType, R, D, Allocator>&& mvp) {
+  return std::move(mvp);
+}
+
 template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
 MVPolynomial<IntType, R, D, Allocator> Simplify(
     const BinaryExpr<

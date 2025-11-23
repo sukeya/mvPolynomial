@@ -450,6 +450,59 @@ auto S(std::size_t axis, B&& begin, E&& end, const BinaryExpr<L, Minus, R>& expr
   auto s_r = S(axis, std::forward<B>(begin), std::forward<E>(end), expr.read_r());
   return BinaryExpr<decltype(s_l)&&, Minus, decltype(s_r)&&>{std::move(s_l), std::move(s_r)};
 }
+
+// Simplify for plus
+template <class LEXPR, class REXPR>
+auto Simplify(const BinaryExpr<LEXPR, Plus, REXPR>& expr) {
+  return Simplify(expr.read_l()) + Simplify(expr.read_r());
+}
+
+template <class LEXPR, class REXPR>
+auto Simplify(BinaryExpr<const LEXPR&, Plus, const REXPR&>&& expr) {
+  return Simplify(expr.read_l()) + Simplify(expr.read_r());
+}
+
+template <class LEXPR, class REXPR>
+auto Simplify(BinaryExpr<LEXPR&&, Plus, const REXPR&>&& expr) {
+  return Simplify(expr.move_l()) + Simplify(expr.read_r());
+}
+
+template <class LEXPR, class REXPR>
+auto Simplify(BinaryExpr<const LEXPR&, Plus, REXPR&&>&& expr) {
+  return Simplify(expr.read_l()) + Simplify(expr.move_r());
+}
+
+template <class LEXPR, class REXPR>
+auto Simplify(BinaryExpr<LEXPR&&, Plus, REXPR&&>&& expr) {
+  return Simplify(expr.move_l()) + Simplify(expr.move_r());
+}
+
+// Simplify for plus
+template <class LEXPR, class REXPR>
+auto Simplify(const BinaryExpr<LEXPR, Multiply, REXPR>& expr) {
+  return Simplify(Simplify(expr.read_l()) * Simplify(expr.read_r()));
+}
+
+template <class LEXPR, class REXPR>
+auto Simplify(BinaryExpr<const LEXPR&, Multiply, const REXPR&>&& expr) {
+  return Simplify(Simplify(expr.read_l()) * Simplify(expr.read_r()));
+}
+
+template <class LEXPR, class REXPR>
+auto Simplify(BinaryExpr<LEXPR&&, Multiply, const REXPR&>&& expr) {
+  return Simplify(Simplify(expr.move_l()) * Simplify(expr.read_r()));
+}
+
+template <class LEXPR, class REXPR>
+auto Simplify(BinaryExpr<const LEXPR&, Multiply, REXPR&&>&& expr) {
+  return Simplify(Simplify(expr.read_l()) * Simplify(expr.move_r()));
+}
+
+template <class LEXPR, class REXPR>
+auto Simplify(BinaryExpr<LEXPR&&, Multiply, REXPR&&>&& expr) {
+  return Simplify(Simplify(expr.move_l()) * Simplify(expr.move_r()));
+}
+
 }  // namespace mvPolynomial
 
 #endif
