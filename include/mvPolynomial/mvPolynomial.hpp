@@ -365,6 +365,8 @@ class MVPolynomial final {
     auto comparer = l.key_comp();
 
     auto mul = MVPolynomial(l.get_allocator());
+    // Clear
+    mul.erase(mul.begin());
     // Calculate all product of each l's term and r's term.
     for (const auto& l_p : l) {
       const auto& [l_idx, l_v] = l_p;
