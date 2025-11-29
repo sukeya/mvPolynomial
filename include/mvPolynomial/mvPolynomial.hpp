@@ -14,7 +14,7 @@
 
 namespace mvPolynomial {
 namespace details {
-void CheckAxis(int dim, int axis) {
+inline void CheckAxis(int dim, int axis) {
   if (axis < 0 || axis >= dim) {
     throw std::runtime_error(
         fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim)
@@ -133,7 +133,7 @@ class MVPolynomial final {
   }
 
   template <typename InputIterator>
-  explicit MVPolynomial(InputIterator s, InputIterator e, const allocator_type& allocator)
+  MVPolynomial(InputIterator s, InputIterator e, const allocator_type& allocator)
       : index2value_(s, e, allocator) {
     CheckSelfIndexes();
   }
@@ -143,10 +143,9 @@ class MVPolynomial final {
     CheckSelfIndexes();
   }
 
-  explicit MVPolynomial(const MVPolynomial& m, const allocator_type& a)
-      : index2value_(m.index2value_, a) {}
+  MVPolynomial(const MVPolynomial& m, const allocator_type& a) : index2value_(m.index2value_, a) {}
 
-  explicit MVPolynomial(MVPolynomial&& m, const allocator_type& a)
+  MVPolynomial(MVPolynomial&& m, const allocator_type& a)
       : index2value_(std::move(m.index2value_), a) {}
 
   MVPolynomial& operator=(std::initializer_list<value_type> l) {
@@ -155,7 +154,7 @@ class MVPolynomial final {
     return *this;
   }
 
-  explicit MVPolynomial(mapped_type r) { index2value_.at(index_type::Zero()) = r; }
+  MVPolynomial(mapped_type r) { index2value_.at(index_type::Zero()) = r; }
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
 
@@ -301,10 +300,17 @@ class MVPolynomial final {
     return *this;
   }
 
-  MVPolynomial& operator*=(mapped_type r) {
-    for (auto& i_and_v : index2value_) {
-      auto& [_, v] = i_and_v;
-      v *= r;
+  MVPolynomial& operator*=(const MVPolynomial& r) {
+    if (r.size() == 1) {
+      const auto& [r_index, r_coeff] = *(r.begin());
+      for (auto& index_and_coeff : *this) {
+        auto& index = const_cast<index_type&>(index_and_coeff.first);
+        auto& coeff = index_and_coeff.second;
+        index += r_index;
+        coeff *= r_coeff;
+      }
+    } else {
+      *this = *this * r;
     }
     return *this;
   }
@@ -348,6 +354,8 @@ class MVPolynomial final {
     return std::move(r) + l;
   }
 
+  friend MVPolynomial operator+(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) + r; }
+
   friend MVPolynomial operator-(const MVPolynomial& l, const MVPolynomial& r) {
     return MVPolynomial(l) - r;
   }
@@ -361,8 +369,19 @@ class MVPolynomial final {
     return -std::move(r) + l;
   }
 
+  friend MVPolynomial operator-(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) - r; }
+
   friend MVPolynomial operator*(const MVPolynomial& l, const MVPolynomial& r) {
     auto comparer = l.key_comp();
+
+    if (l.size() == 1) {
+      auto mul = r;
+      mul *= l;
+      return mul;
+    }
+    if (r.size() == 1) {
+      return r * l;
+    }
 
     auto mul = MVPolynomial(l.get_allocator());
     // Clear
