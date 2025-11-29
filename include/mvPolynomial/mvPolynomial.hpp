@@ -133,7 +133,7 @@ class MVPolynomial final {
   }
 
   template <typename InputIterator>
-  explicit MVPolynomial(InputIterator s, InputIterator e, const allocator_type& allocator)
+  MVPolynomial(InputIterator s, InputIterator e, const allocator_type& allocator)
       : index2value_(s, e, allocator) {
     CheckSelfIndexes();
   }
@@ -143,10 +143,9 @@ class MVPolynomial final {
     CheckSelfIndexes();
   }
 
-  explicit MVPolynomial(const MVPolynomial& m, const allocator_type& a)
-      : index2value_(m.index2value_, a) {}
+  MVPolynomial(const MVPolynomial& m, const allocator_type& a) : index2value_(m.index2value_, a) {}
 
-  explicit MVPolynomial(MVPolynomial&& m, const allocator_type& a)
+  MVPolynomial(MVPolynomial&& m, const allocator_type& a)
       : index2value_(std::move(m.index2value_), a) {}
 
   MVPolynomial& operator=(std::initializer_list<value_type> l) {
