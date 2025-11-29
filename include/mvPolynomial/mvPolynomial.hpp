@@ -154,7 +154,7 @@ class MVPolynomial final {
     return *this;
   }
 
-  explicit MVPolynomial(mapped_type r) { index2value_.at(index_type::Zero()) = r; }
+  MVPolynomial(mapped_type r) { index2value_.at(index_type::Zero()) = r; }
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
 
