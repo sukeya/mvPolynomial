@@ -14,7 +14,7 @@
 
 namespace mvPolynomial {
 namespace details {
-void CheckAxis(int dim, int axis) {
+inline void CheckAxis(int dim, int axis) {
   if (axis < 0 || axis >= dim) {
     throw std::runtime_error(
         fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim)
