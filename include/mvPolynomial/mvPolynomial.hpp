@@ -300,10 +300,17 @@ class MVPolynomial final {
     return *this;
   }
 
-  MVPolynomial& operator*=(mapped_type r) {
-    for (auto& i_and_v : index2value_) {
-      auto& [_, v] = i_and_v;
-      v *= r;
+  MVPolynomial& operator*=(const MVPolynomial& r) {
+    if (r.size() == 1) {
+      const auto& [r_index, r_coeff] = *(r.begin());
+      for (auto& index_and_coeff : *this) {
+        auto& index = const_cast<index_type&>(index_and_coeff.first);
+        auto& coeff = index_and_coeff.second;
+        index += r_index;
+        coeff *= r_coeff;
+      }
+    } else {
+      *this = *this * r;
     }
     return *this;
   }
