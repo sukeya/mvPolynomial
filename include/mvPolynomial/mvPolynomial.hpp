@@ -354,6 +354,8 @@ class MVPolynomial final {
     return std::move(r) + l;
   }
 
+  friend MVPolynomial operator+(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) + r; }
+
   friend MVPolynomial operator-(const MVPolynomial& l, const MVPolynomial& r) {
     return MVPolynomial(l) - r;
   }
@@ -366,6 +368,8 @@ class MVPolynomial final {
   friend MVPolynomial operator-(const MVPolynomial& l, MVPolynomial&& r) {
     return -std::move(r) + l;
   }
+
+  friend MVPolynomial operator-(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) - r; }
 
   friend MVPolynomial operator*(const MVPolynomial& l, const MVPolynomial& r) {
     auto comparer = l.key_comp();
