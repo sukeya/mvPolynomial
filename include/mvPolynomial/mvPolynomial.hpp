@@ -374,15 +374,6 @@ class MVPolynomial final {
   friend MVPolynomial operator*(const MVPolynomial& l, const MVPolynomial& r) {
     auto comparer = l.key_comp();
 
-    if (l.size() == 1) {
-      auto mul = r;
-      mul *= l;
-      return mul;
-    }
-    if (r.size() == 1) {
-      return r * l;
-    }
-
     auto mul = MVPolynomial(l.get_allocator());
     // Clear
     mul.erase(mul.begin());
