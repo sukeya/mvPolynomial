@@ -280,6 +280,16 @@ class MVPolynomial final {
     return std::move(*this);
   }
 
+  MVPolynomial& operator+=(mapped_type r) {
+    Index idx = Index::Zero();
+    if (contains(idx)) {
+      (*this)[idx] += r;
+    } else {
+      (*this)[idx] = r;
+    }
+    return *this;
+  }
+
   MVPolynomial& operator+=(const MVPolynomial& r) {
     for (const auto& [idx, coeff] : r) {
       if (contains(idx)) {
@@ -291,6 +301,16 @@ class MVPolynomial final {
     return *this;
   }
 
+  MVPolynomial& operator-=(mapped_type r) {
+    Index idx = Index::Zero();
+    if (contains(idx)) {
+      (*this)[idx] -= r;
+    } else {
+      (*this)[idx] = r;
+    }
+    return *this;
+  }
+
   MVPolynomial& operator-=(const MVPolynomial& r) {
     for (const auto& [idx, coeff] : r) {
       if (contains(idx)) {
@@ -298,6 +318,16 @@ class MVPolynomial final {
       } else {
         (*this)[idx] = -coeff;
       }
+    }
+    return *this;
+  }
+
+  MVPolynomial& operator*=(mapped_type r) {
+    Index idx = Index::Zero();
+    if (contains(idx)) {
+      (*this)[idx] *= r;
+    } else {
+      (*this)[idx] = r;
     }
     return *this;
   }
