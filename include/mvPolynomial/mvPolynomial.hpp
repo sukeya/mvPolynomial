@@ -198,6 +198,8 @@ class MVPolynomial final {
 
   void swap(MVPolynomial& m) { index2value_.swap(m.index2value_); }
 
+  void clear() { index2value_.clear(); }
+
   // I didn't want to add insert and erase, but for efficiency, I did.
   std::pair<iterator, bool> insert(const value_type& x) { return index2value_.insert(x); }
   std::pair<iterator, bool> insert(value_type&& x) { return index2value_.insert(std::move(x)); }
@@ -375,8 +377,7 @@ class MVPolynomial final {
     auto comparer = l.key_comp();
 
     auto mul = MVPolynomial(l.get_allocator());
-    // Clear
-    mul.erase(mul.begin());
+    mul.clear();
     // Calculate all product of each l's term and r's term.
     for (const auto& l_p : l) {
       const auto& [l_idx, l_v] = l_p;
