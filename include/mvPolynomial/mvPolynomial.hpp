@@ -261,6 +261,15 @@ class MVPolynomial final {
 
   R operator()(const coord_type& x) const { return details::OfImpl(crbegin(), crend(), dim, 0, x); }
 
+  MVPolynomial operator()(const MVPolynomial& x, int axis) const {
+    CheckAxis(dim, axis);
+
+    auto composed_mvp = MVPolynomial{get_allocator()};
+    composed_mvp.clear();
+    OfImpl(composed_mvp, begin(), end(), 0, axis, x);
+    return composed_mvp;
+  }
+
   MVPolynomial operator+() const { return *this; }
 
   MVPolynomial operator-() const& {
@@ -432,6 +441,79 @@ class MVPolynomial final {
     // so I only have to check if each of its elements is non-negative.
     if ((index2value_.begin()->first < 0).any()) {
       throw std::invalid_argument(fmt::format("Negative index not supported!"));
+    }
+  }
+
+  void OfImpl(MVPolynomial& composed_mvp, const_iterator begin, const_iterator end, int i, int axis, const MVPolynomial& x) const {
+    using Index = std::remove_cvref_t<typename Iterator::value_type::first_type>;
+
+    CheckAxis(dim, i);
+
+    if (i == axis) {
+      if (begin->first[i] == 0) {
+        for (auto it = begin; it != end; ++it) {
+          composed_mvp.insert(*it);
+        }
+        return;
+      }
+      if (axis == dim - 1) {
+        auto last_mvp = MVPolynomial{get_allocator()};
+        last_mvp += begin->second;
+        auto last_index = Index{begin->first};
+        for (auto it = std::next(begin); it != end; ++it) {
+          const auto& [next_index, next_coeff] = *it;
+          last_mvp *= x.pow(last_index[i] - next_index[i]);
+          last_mvp += next_coeff;
+          last_index = next_index;
+        }
+        last_coeff *= MVPolynomial{
+          {{last_index, 1}}, get_allocator()
+        };
+        composed_mvp += last_coeff;
+        return;
+      }
+      auto mvp = MVPolynomial{get_allocator()};
+      while (true) {
+        const auto& [first_index, first_coeff] = *begin;
+        auto partition_point = std::partition_point(
+            begin,
+            end,
+            [axis, &first_index](const typename Iterator::value_type& pair) {
+              return pair.first[axis] == first_index[axis];
+            }
+        );
+        for (auto it = begin; it != partition_point; ++it) {
+          auto index = Index{it->first};
+          // set the index of axis to 0 for multiplying powed `x` all at once.
+          index[axis] = 0;
+          mvp.insert(std::make_pair(index, it->second));
+        }
+        composed_mvp += mvp * x.pow(first_index[axis]);
+
+        // The calculation ends.
+        if (partition_point == end) {
+          break;
+        }
+        begin = partition_point;
+        mvp.clear();
+      }
+    } else {
+      while (true) {
+        const auto& [first_index, first_coeff] = *begin;
+        auto partition_point                   = std::partition_point(
+            begin,
+            end,
+            [i, &first_index](const typename Iterator::value_type& pair) {
+              return pair.first[i] == first_index[i];
+            }
+        );
+        OfImpl(composed_mvp, begin, partition_point, i + 1, axis, x);
+        if (partition_point == end) {
+          // The calculation ends.
+          break;
+        }
+        begin = partition_point;
+      }
     }
   }
 
