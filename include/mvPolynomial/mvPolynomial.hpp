@@ -264,7 +264,7 @@ class MVPolynomial final {
   MVPolynomial operator+() const { return *this; }
 
   MVPolynomial operator-() const& {
-    auto m = MVPolynomial(*this);
+    auto m = MVPolynomial(*this, get_allocator());
     for (auto& i_and_v : m) {
       auto& [_, v] = i_and_v;
       v            = -v;
@@ -344,7 +344,7 @@ class MVPolynomial final {
   friend bool operator!=(const MVPolynomial& l, const MVPolynomial& r) { return !(l == r); }
 
   friend MVPolynomial operator+(const MVPolynomial& l, const MVPolynomial& r) {
-    return MVPolynomial(l) + r;
+    return MVPolynomial(l, l.get_allocator()) + r;
   }
 
   friend MVPolynomial operator+(MVPolynomial&& l, const MVPolynomial& r) {
@@ -359,7 +359,7 @@ class MVPolynomial final {
   friend MVPolynomial operator+(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) + r; }
 
   friend MVPolynomial operator-(const MVPolynomial& l, const MVPolynomial& r) {
-    return MVPolynomial(l) - r;
+    return MVPolynomial(l, l.get_allocator()) - r;
   }
 
   friend MVPolynomial operator-(MVPolynomial&& l, const MVPolynomial& r) {
@@ -458,7 +458,7 @@ auto Integrate(MVPolynomial<IntType, R, D, Allocator>&& p, int axis) {
 
 template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
 auto Integrate(const MVPolynomial<IntType, R, D, Allocator>& p, int axis) {
-  return Integrate(MVPolynomial<IntType, R, D, Allocator>(p), axis);
+  return Integrate(MVPolynomial<IntType, R, D, Allocator>(p, p.get_allocator()), axis);
 }
 
 }  // namespace mvPolynomial
