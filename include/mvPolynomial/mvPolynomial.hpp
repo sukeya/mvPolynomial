@@ -11,7 +11,6 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "Eigen/Core"
 #include "fmt/core.h"
 #include "platanus/btree_map.hpp"
 
@@ -157,7 +156,7 @@ class MVPolynomial final {
     return *this;
   }
 
-  MVPolynomial(mapped_type r) { index2value_.at(index_type::Zero()) = r; }
+  MVPolynomial(mapped_type r, const allocator_type& a = allocator_type{}) : index2value_({{index_type::Zero(), r}}, a) {}
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
 
@@ -479,7 +478,7 @@ class MVPolynomial final {
     // The first index is the lowest index of all index,
     // so I only have to check if each of its elements is non-negative.
     if ((index2value_.begin()->first < 0).any()) {
-      throw std::invalid_argument(fmt::format("Negative index not supported!"));
+      throw std::invalid_argument("Negative index not supported!");
     }
   }
 
@@ -507,8 +506,7 @@ class MVPolynomial final {
         return;
       }
       if (axis == dim - 1) {
-        auto last_mvp = MVPolynomial{get_allocator()};
-        last_mvp += begin->second;
+        auto last_mvp   = MVPolynomial{begin->second, get_allocator()};
         auto last_index = Index{begin->first};
         for (auto it = std::next(begin); it != end; ++it) {
           const auto& [next_index, next_coeff] = *it;
