@@ -65,6 +65,28 @@ TEST_CASE("constructor", "[mvPolynomial]") {
   }
 }
 
+TEST_CASE("pow", "[mvPolynomial]") {
+  auto m = MP2({
+      {{0, 0}, 1},
+      {{1, 0}, 2},
+      {{0, 1}, 3},
+  });
+
+  auto m3 = m * m * m;
+
+  SECTION("0") { REQUIRE(m.pow(0) == MP2(1)); }
+
+  SECTION("1") { REQUIRE(m.pow(1) == m); }
+
+  SECTION("2") { REQUIRE(m.pow(2) == m * m); }
+
+  SECTION("3") { REQUIRE(m.pow(3) == m * m * m); }
+
+  SECTION("7") { REQUIRE(m.pow(7) == m3 * m3 * m); }
+
+  SECTION("15") { REQUIRE(m.pow(15) == m3 * m3 * m3 * m3 * m3); }
+}
+
 TEST_CASE("operator()", "[mvPolynomial]") {
   auto m = MP2({
       {{0, 0}, 1},

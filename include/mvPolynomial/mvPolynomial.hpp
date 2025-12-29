@@ -5,7 +5,10 @@
 #include "mvPolynomial/index_comparer.hpp"
 
 #include <algorithm>
+#include <bit>
+#include <cmath>
 #include <iterator>
+#include <stdexcept>
 #include <type_traits>
 
 #include "Eigen/Core"
@@ -259,6 +262,42 @@ class MVPolynomial final {
     return index2value_.upper_bound(i);
   }
 
+  MVPolynomial pow(int exp) const {
+    if (exp < 0) {
+      throw std::invalid_argument("Given exp must be positive.");
+    }
+    switch (exp) {
+      case 0:
+        return MVPolynomial{1, get_allocator()};
+      case 1:
+        return *this;
+      case 2:
+        return (*this) * (*this);
+      default:
+        auto max_pow2_under_exp = std::bit_floor(static_cast<unsigned int>(exp));
+        auto max_bit_width      = std::bit_width(max_pow2_under_exp);
+        auto cache              = std::vector<MVPolynomial>(max_bit_width - 1, get_allocator());
+        cache.at(0)             = (*this) * (*this);
+        for (int i = 2; i < max_bit_width; ++i) {
+          cache.at(i - 1) = cache.at(i - 2) * cache.at(i - 2);
+        }
+
+        assert(!cache.empty());
+        auto powed_mvp = std::move(cache.back());
+        exp -= max_pow2_under_exp;
+        while (exp > 1) {
+          auto max_pow2_under_exp = std::bit_floor(static_cast<unsigned int>(exp));
+          auto max_bit_width      = std::bit_width(max_pow2_under_exp);
+          powed_mvp *= cache[max_bit_width - 2];
+          exp -= max_pow2_under_exp;
+        }
+        if (exp == 1) {
+          powed_mvp *= *this;
+        }
+        return powed_mvp;
+    }
+  }
+
   R operator()(const coord_type& x) const { return details::OfImpl(crbegin(), crend(), dim, 0, x); }
 
   MVPolynomial operator()(const MVPolynomial& x, int axis) const {
@@ -444,7 +483,14 @@ class MVPolynomial final {
     }
   }
 
-  void OfImpl(MVPolynomial& composed_mvp, const_iterator begin, const_iterator end, int i, int axis, const MVPolynomial& x) const {
+  void OfImpl(
+      MVPolynomial&       composed_mvp,
+      const_iterator      begin,
+      const_iterator      end,
+      int                 i,
+      int                 axis,
+      const MVPolynomial& x
+  ) const {
     using Index = std::remove_cvref_t<typename Iterator::value_type::first_type>;
 
     CheckAxis(dim, i);
@@ -466,16 +512,14 @@ class MVPolynomial final {
           last_mvp += next_coeff;
           last_index = next_index;
         }
-        last_coeff *= MVPolynomial{
-          {{last_index, 1}}, get_allocator()
-        };
+        last_coeff *= MVPolynomial{{{last_index, 1}}, get_allocator()};
         composed_mvp += last_coeff;
         return;
       }
       auto mvp = MVPolynomial{get_allocator()};
       while (true) {
         const auto& [first_index, first_coeff] = *begin;
-        auto partition_point = std::partition_point(
+        auto partition_point                   = std::partition_point(
             begin,
             end,
             [axis, &first_index](const typename Iterator::value_type& pair) {
