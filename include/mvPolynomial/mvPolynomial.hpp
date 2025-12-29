@@ -301,11 +301,11 @@ class MVPolynomial final {
   R operator()(const coord_type& x) const { return details::OfImpl(crbegin(), crend(), dim, 0, x); }
 
   MVPolynomial operator()(const MVPolynomial& x, int axis) const {
-    CheckAxis(dim, axis);
+    details::CheckAxis(dim, axis);
 
     auto composed_mvp = MVPolynomial{get_allocator()};
     composed_mvp.clear();
-    OfImpl(composed_mvp, begin(), end(), 0, axis, x);
+    OfImpl(composed_mvp, rbegin(), rend(), 0, axis, x);
     return composed_mvp;
   }
 
@@ -329,7 +329,7 @@ class MVPolynomial final {
   }
 
   MVPolynomial& operator+=(mapped_type r) {
-    Index idx = Index::Zero();
+    auto idx = index_type::Zero();
     if (contains(idx)) {
       (*this)[idx] += r;
     } else {
@@ -350,7 +350,7 @@ class MVPolynomial final {
   }
 
   MVPolynomial& operator-=(mapped_type r) {
-    Index idx = Index::Zero();
+    auto idx = index_type::Zero();
     if (contains(idx)) {
       (*this)[idx] -= r;
     } else {
@@ -371,7 +371,7 @@ class MVPolynomial final {
   }
 
   MVPolynomial& operator*=(mapped_type r) {
-    Index idx = Index::Zero();
+    auto idx = index_type::Zero();
     if (contains(idx)) {
       (*this)[idx] *= r;
     } else {
@@ -484,21 +484,25 @@ class MVPolynomial final {
   }
 
   void OfImpl(
-      MVPolynomial&       composed_mvp,
-      const_iterator      begin,
-      const_iterator      end,
-      int                 i,
-      int                 axis,
-      const MVPolynomial& x
+      MVPolynomial&          composed_mvp,
+      const_reverse_iterator begin,
+      const_reverse_iterator end,
+      int                    i,
+      int                    axis,
+      const MVPolynomial&    x
   ) const {
-    using Index = std::remove_cvref_t<typename Iterator::value_type::first_type>;
+    using Index = std::remove_cvref_t<typename const_iterator::value_type::first_type>;
 
-    CheckAxis(dim, i);
+    details::CheckAxis(dim, i);
 
     if (i == axis) {
       if (begin->first[i] == 0) {
         for (auto it = begin; it != end; ++it) {
-          composed_mvp.insert(*it);
+          if (composed_mvp.contains(it->first)) {
+            composed_mvp.at(it->first) += it->second;
+          } else {
+            composed_mvp.insert(*it);
+          }
         }
         return;
       }
@@ -512,17 +516,18 @@ class MVPolynomial final {
           last_mvp += next_coeff;
           last_index = next_index;
         }
-        last_coeff *= MVPolynomial{{{last_index, 1}}, get_allocator()};
-        composed_mvp += last_coeff;
+        last_mvp *= MVPolynomial{{{last_index, 1}}, get_allocator()};
+        composed_mvp += last_mvp;
         return;
       }
       auto mvp = MVPolynomial{get_allocator()};
+      mvp.clear();
       while (true) {
         const auto& [first_index, first_coeff] = *begin;
         auto partition_point                   = std::partition_point(
             begin,
             end,
-            [axis, &first_index](const typename Iterator::value_type& pair) {
+            [axis, &first_index](const typename const_reverse_iterator::value_type& pair) {
               return pair.first[axis] == first_index[axis];
             }
         );
@@ -547,7 +552,7 @@ class MVPolynomial final {
         auto partition_point                   = std::partition_point(
             begin,
             end,
-            [i, &first_index](const typename Iterator::value_type& pair) {
+            [i, &first_index](const typename const_reverse_iterator::value_type& pair) {
               return pair.first[i] == first_index[i];
             }
         );
@@ -565,7 +570,8 @@ class MVPolynomial final {
 };
 
 template <std::signed_integral IntType, std::floating_point R, int Dim, class Allocator>
-R MVPolynomial<IntType, R, Dim, Allocator>::tolerance = std::numeric_limits<R>::min_exponent10;
+R MVPolynomial<IntType, R, Dim, Allocator>::tolerance =
+    std::ldexp(std::numeric_limits<double>::epsilon(), std::numeric_limits<double>::min_exponent);
 
 template <std::signed_integral IntType, std::floating_point R, int Dim, class Allocator>
 auto D(const MVPolynomial<IntType, R, Dim, Allocator>& p, int axis) {
