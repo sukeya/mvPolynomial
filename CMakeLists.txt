@@ -59,7 +59,6 @@ target_link_libraries(
     ${extra_libs}
 )
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(gcc "$<COMPILE_LANG_AND_ID:CXX,GNU>")
 set(clang "$<COMPILE_LANG_AND_ID:CXX,Clang>")
 set(msvc "$<COMPILE_LANG_AND_ID:CXX,MSVC>")
