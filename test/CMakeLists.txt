@@ -11,8 +11,8 @@ target_compile_options(
   mvPolynomial_test
   INTERFACE
     # Common options for gcc and clang
-    "$<${gcc_like}>:-Wall;-Wextra>"
-    "$<${msvc}:/Wall>"
+    "$<${gcc_like}:-Wall;-Wextra;-Werror>"
+    "$<${msvc}:/Wall;/WX>"
 )
 target_link_libraries(
   mvPolynomial_test
