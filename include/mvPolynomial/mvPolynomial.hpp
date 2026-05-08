@@ -188,13 +188,6 @@ class MVPolynomial final {
   mapped_type& operator[](const key_type& index) { return index2value_[index]; }
   mapped_type& operator[](key_type&& index) { return index2value_[index]; }
 
-  const mapped_type& operator[](const key_type& index) const {
-    return const_cast<MVPolynomial*>(this)->operator[](index);
-  }
-  const mapped_type& operator[](key_type&& index) const {
-    return const_cast<MVPolynomial*>(this)->operator[](index);
-  }
-
   mapped_type&       at(const key_type& i) { return index2value_.at(i); }
   const mapped_type& at(const key_type& i) const { return index2value_.at(i); }
 
