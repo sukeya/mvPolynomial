@@ -371,10 +371,9 @@ class MVPolynomial final {
 
   MVPolynomial& operator*=(mapped_type r) {
     auto idx = index_type::Zero();
-    if (contains(idx)) {
-      (*this)[idx] *= r;
-    } else {
-      (*this)[idx] = r;
+    for (auto& index_and_coeff : *this) {
+      auto& coeff = index_and_coeff.second;
+      coeff *= 2;
     }
     return *this;
   }
