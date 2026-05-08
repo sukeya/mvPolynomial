@@ -151,6 +151,7 @@ class MVPolynomial final {
       : index2value_(std::move(m.index2value_), a) {}
 
   MVPolynomial& operator=(std::initializer_list<value_type> l) {
+    index2value_.clear();
     index2value_.insert(l.begin(), l.end());
     CheckSelfIndexes();
     return *this;
