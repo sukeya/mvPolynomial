@@ -14,6 +14,14 @@
       "generator": "Ninja"
     },
     {
+      "name": "test_local",
+      "inherits": ["test"],
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "generator": "Ninja"
+    },
+    {
       "name": "test_gcc",
       "inherits": ["test"],
       "cacheVariables": {
