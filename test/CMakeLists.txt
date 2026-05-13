@@ -1,5 +1,3 @@
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-
 add_executable(mvPolynomial_test mvPolynomial_test.cpp)
 target_compile_options(
   mvPolynomial_test
