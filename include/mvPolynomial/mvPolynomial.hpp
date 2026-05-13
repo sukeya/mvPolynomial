@@ -3,22 +3,21 @@
 
 #include "mvPolynomial/type.hpp"
 #include "mvPolynomial/index_comparer.hpp"
-#include "mvPolynomial/polynomial.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <iterator>
 #include <memory>
 #include <sstream>
 #include <ranges>
 
-#include "boost/tuple/tuple.hpp"
-#include "boost/iterator/zip_iterator.hpp"
 #include "Eigen/Core"
 #include "fmt/core.h"
+#include "platanus/btree_map.hpp"
 
 namespace mvPolynomial {
 namespace {
-void CheckAxis(int dim, int axis) {
+inline void CheckAxis(int dim, int axis) {
   if (axis < 0 || axis >= dim) {
     throw std::runtime_error(
         fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim)
@@ -31,7 +30,7 @@ template <
     std::signed_integral IntType,
     std::floating_point  R,
     int                  D,
-    class Allocator = std::allocator<std::pair<IndexType<IntType, D>, R>>>
+    class Allocator = std::allocator<std::pair<const IndexType<IntType, D>, R>>>
 class MVPolynomial final {
  public:
   static_assert(D > 0, "MVPolynomial: the dimension must be greater than 0.");
@@ -39,25 +38,29 @@ class MVPolynomial final {
   static constexpr int dim = D;
 
   // This setting is too strict, so I expect users to set tolerance.
-  static R tolerance = std::numeric_limits<R>::min_exponent10();
+  static inline R tolerance = std::numeric_limits<R>::epsilon();
 
   using index_type = IndexType<IntType, D>;
   using coord_type = CoordType<R, dim>;
 
  private:
-  using Compare        = IndexComparer<IntType, D>;
+  using Comparer       = IndexComparer<IntType, D>;
   using IndexContainer = platanus::btree_map<index_type, R, Comparer, Allocator>;
 
  public:
-  using key_type    = IndexContainer::key_type;
-  using value_type  = IndexContainer::value_type;
-  using mapped_type = IndexContainer::mapped_type;
-  using coeff_type  = mapped_type;
+  using key_type           = IndexContainer::key_type;
+  using value_type         = IndexContainer::value_type;
+  using mapped_type        = IndexContainer::mapped_type;
+  using coeff_type         = mapped_type;
+  using mutable_value_type = std::pair<index_type, mapped_type>;
 
   using key_compare   = IndexContainer::key_compare;
   using value_compare = IndexContainer::value_compare;
 
   using allocator_type = IndexContainer::allocator_type;
+  using sequence_allocator_type =
+      typename std::allocator_traits<allocator_type>::template rebind_alloc<mutable_value_type>;
+  using sequence_type = std::vector<mutable_value_type, sequence_allocator_type>;
 
   using pointer       = IndexContainer::pointer;
   using const_pointer = IndexContainer::const_pointer;
@@ -115,6 +118,7 @@ class MVPolynomial final {
   explicit MVPolynomial(mapped_type r) { index2value_.at(index_type::Zero()) = r; }
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
+  key_compare    key_comp() const noexcept { return index2value_.key_comp(); }
 
   iterator       begin() noexcept { return index2value_.begin(); }
   const_iterator begin() const noexcept { return index2value_.begin(); }
@@ -198,7 +202,7 @@ class MVPolynomial final {
 
   index_type degree() const noexcept {
     assert(size() != 0);
-    return *(cbegin()).first;
+    return cbegin()->first;
   }
 
   MVPolynomial operator+() const { return *this; }
@@ -246,33 +250,32 @@ class MVPolynomial final {
 
   friend MVPolynomial operator+(const MVPolynomial& l, const MVPolynomial& r) {
     auto comparer = l.key_comp();
-    auto sum      = MVPolynomial(comparer, l.get_allocator());
-    sum.reserve(l.size() + r.size());
-    auto l_it = l.begin();
-    auto r_it = r.begin();
+    auto sum      = MVPolynomial(l.get_allocator());
+    auto l_it     = l.begin();
+    auto r_it     = r.begin();
     // Like Merge sort algorithm, insert or sum data to sum.
     while (l_it != l.end() && r_it != r.end()) {
       const auto& [l_idx, l_v] = *l_it;
       const auto& [r_idx, r_v] = *r_it;
       if (comparer(l_idx, r_idx)) {
-        sum.emplace_hint(sum.end(), *l_it);
+        sum.index2value_.insert(sum.index2value_.end(), *l_it);
         ++l_it;
       } else if (comparer(r_idx, l_idx)) {
-        sum.emplace_hint(sum.end(), *r_it);
+        sum.index2value_.insert(sum.index2value_.end(), *r_it);
         ++r_it;
       } else {
-        sum.emplace_hint(sum.end(), l_idx, l_v + r_v);
+        sum.index2value_.insert(sum.index2value_.end(), value_type{l_idx, l_v + r_v});
         ++l_it;
         ++r_it;
       }
     }
     // If r or l iterator don't equals its end, insert the extra to sum.
     while (l_it != l.end()) {
-      sum.emplace_hint(sum.end(), *l_it);
+      sum.index2value_.insert(sum.index2value_.end(), *l_it);
       ++l_it;
     }
     while (r_it != r.end()) {
-      sum.emplace_hint(sum.end(), *r_it);
+      sum.index2value_.insert(sum.index2value_.end(), *r_it);
       ++r_it;
     }
     return sum;
@@ -280,34 +283,33 @@ class MVPolynomial final {
 
   friend MVPolynomial operator-(const MVPolynomial& l, const MVPolynomial& r) {
     auto comparer = l.key_comp();
-    auto sub      = MVPolynomial(comparer, l.get_allocator());
-    sub.reserve(l.size() + r.size());
-    auto l_it = l.begin();
-    auto r_it = r.begin();
+    auto sub      = MVPolynomial(l.get_allocator());
+    auto l_it     = l.begin();
+    auto r_it     = r.begin();
     // Like Merge sort algorithm, insert or subtract data to sub.
     while (l_it != l.end() && r_it != r.end()) {
       const auto& [l_idx, l_v] = *l_it;
       const auto& [r_idx, r_v] = *r_it;
       if (comparer(l_idx, r_idx)) {
-        sub.emplace_hint(sub.end(), *l_it);
+        sub.index2value_.insert(sub.index2value_.end(), *l_it);
         ++l_it;
       } else if (comparer(r_idx, l_idx)) {
-        sub.emplace_hint(sub.end(), r_idx, -r_v);
+        sub.index2value_.insert(sub.index2value_.end(), value_type{r_idx, -r_v});
         ++r_it;
       } else {
-        sub.emplace_hint(sub.end(), l_idx, l_v - r_v);
+        sub.index2value_.insert(sub.index2value_.end(), value_type{l_idx, l_v - r_v});
         ++l_it;
         ++r_it;
       }
     }
     // If r or l iterator don't equals its end, insert the extra to sub.
     while (l_it != l.end()) {
-      sub.emplace_hint(sub.end(), *l_it);
+      sub.index2value_.insert(sub.index2value_.end(), *l_it);
       ++l_it;
     }
     while (r_it != r.end()) {
       const auto& [r_idx, r_v] = *r_it;
-      sub.emplace_hint(sub.end(), r_idx, -r_v);
+      sub.index2value_.insert(sub.index2value_.end(), value_type{r_idx, -r_v});
       ++r_it;
     }
     return sub;
@@ -315,7 +317,7 @@ class MVPolynomial final {
 
   friend MVPolynomial operator*(const MVPolynomial& l, const MVPolynomial& r) {
     auto comparer = l.key_comp();
-    auto mul      = std::vector<value_type>();
+    auto mul      = sequence_type(l.get_allocator());
     mul.reserve(l.size() * r.size());
     // Calculate all product of each l's term and r's term.
     for (const auto& l_p : l) {
@@ -328,18 +330,15 @@ class MVPolynomial final {
     std::sort(mul.begin(), mul.end(), [&comparer](const value_type& l, const value_type& r) {
       return comparer(l.first, r.first);
     });
-    auto rm_begin =
-        std::unique(mul.begin(), mul.end(), [](const value_type& l, const value_type& r) {
-          return (l.first == r.first).all();
-        });
-    // For simplicity, I make a MVPolynomial now.
-    auto mp = MVPolynomial(
-        boost::container::ordered_unique_range_t(),
+    auto rm_begin = std::unique(
         mul.begin(),
-        rm_begin,
-        comparer,
-        l.get_allocator()
+        mul.end(),
+        [](const mutable_value_type& l, const mutable_value_type& r) {
+          return (l.first == r.first).all();
+        }
     );
+    // For simplicity, I make a MVPolynomial now.
+    auto mp = MVPolynomial(mul.begin(), rm_begin, l.get_allocator());
     // Add duplicated elements to mp.
     for (auto it = rm_begin; it != mul.end(); ++it) {
       mp[it->first] += it->second;
@@ -354,7 +353,7 @@ class MVPolynomial final {
   void CheckSelfIndexes() const {
     // The last index is the lowest index of all index,
     // so I only have to check if each of its elements is non-negative.
-    if ((index2value_.back().first < 0).any()) {
+    if (!index2value_.empty() && (std::prev(index2value_.end())->first < 0).any()) {
       throw std::invalid_argument(fmt::format("Negative index not supported!"));
     }
   }
@@ -376,70 +375,20 @@ class MVPolynomial final {
 
 template <
     std::signed_integral IntType,
-    class R,
-    int D,
-    class AllocatorOrContainer =
-        boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>>
-using DefaultMVPolynomial =
-    MVPolynomial<IntType, R, D, IndexComparer<IntType, D>, AllocatorOrContainer>;
+    std::floating_point  R,
+    int                  Dim,
+    class Allocator = std::allocator<std::pair<const IndexType<IntType, Dim>, R>>>
+auto D(const MVPolynomial<IntType, R, Dim, Allocator>& p, std::size_t axis) {
+  using MP = MVPolynomial<IntType, R, Dim, Allocator>;
 
-template <
-    std::signed_integral IntType,
-    class R,
-    int Dim,
-    class Comparer,
-    class AllocatorOrContainer =
-        boost::container::new_allocator<std::pair<IndexType<IntType, Dim>, R>>>
-auto D(const MVPolynomial<IntType, R, Dim, Comparer, AllocatorOrContainer>& p, std::size_t axis) {
-  using MP = MVPolynomial<IntType, R, Dim, Comparer, AllocatorOrContainer>;
-
-  MP::CheckAxis(axis);
-
-  auto new_index2value_seq = typename MP::sequence_type(p.get_allocator());
-  new_index2value_seq.reserve(p.size());
-  for (auto index_and_value : p) {
-    auto [index, value] = index_and_value;
-    if (index[axis] == 0) {
-      continue;
-    } else {
-      value *= index[axis]--;
-      new_index2value_seq.emplace_back(index, value);
-    }
-  }
-  const auto& comparer = p.key_comp();
-  // Sort indexes in order not to violate the order by comparer.
-  std::sort(
-      new_index2value_seq.begin(),
-      new_index2value_seq.end(),
-      [&comparer](const MP::value_type& l, const MP::value_type& r) {
-        return comparer(l.first, r.first);
-      }
-  );
-  return MP(
-      boost::container::ordered_unique_range_t(),
-      new_index2value_seq.begin(),
-      new_index2value_seq.end(),
-      comparer,
-      p.get_allocator()
-  );
-}
-
-template <
-    std::signed_integral IntType,
-    class R,
-    int Dim,
-    class AllocatorOrContainer =
-        boost::container::new_allocator<std::pair<IndexType<IntType, Dim>, R>>>
-auto D(const DefaultMVPolynomial<IntType, R, Dim, AllocatorOrContainer>& p, std::size_t axis) {
-  using MP = DefaultMVPolynomial<IntType, R, Dim, AllocatorOrContainer>;
-
-  MP::CheckAxis(axis);
+  CheckAxis(MP::dim, axis);
 
   auto new_index2value_seq = typename MP::sequence_type(p.get_allocator());
   new_index2value_seq.reserve(p.size());
   auto p_it = p.begin();
   while (p_it != p.end()) {
-    auto [index, value] = *p_it;
+    auto index = p_it->first;
+    auto value = p_it->second;
     if (index[axis] == 0) {
       if (axis == MP::dim - 1) {
         ++p_it;
@@ -462,125 +411,49 @@ auto D(const DefaultMVPolynomial<IntType, R, Dim, AllocatorOrContainer>& p, std:
       ++p_it;
     }
   }
-  return MP(
-      boost::container::ordered_unique_range_t(),
-      new_index2value_seq.begin(),
-      new_index2value_seq.end(),
-      p.key_comp(),
-      p.get_allocator()
-  );
+  return MP(new_index2value_seq.begin(), new_index2value_seq.end(), p.get_allocator());
 }
 
 template <
     std::signed_integral IntType,
-    class R,
-    int D,
-    class Comparer = IndexComparer<IntType, D>,
-    class AllocatorOrContainer =
-        boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>>
-auto Integrate(MVPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>&& p, std::size_t axis) {
-  using MP = MVPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>;
+    std::floating_point  R,
+    int                  Dim,
+    class Allocator = std::allocator<std::pair<const IndexType<IntType, Dim>, R>>>
+auto Integrate(const MVPolynomial<IntType, R, Dim, Allocator>& p, std::size_t axis) {
+  using MP = MVPolynomial<IntType, R, Dim, Allocator>;
 
-  MP::CheckAxis(axis);
+  CheckAxis(MP::dim, axis);
 
-  auto index2value = p.extract_sequence();
-  for (auto& index_and_value : index2value) {
-    auto& [index, value] = index_and_value;
+  auto new_index2value_seq = typename MP::sequence_type(p.get_allocator());
+  new_index2value_seq.reserve(p.size());
+  for (auto index_and_value : p) {
+    auto index = index_and_value.first;
+    auto value = index_and_value.second;
     value /= ++index[axis];
+    new_index2value_seq.emplace_back(index, value);
   }
-  const auto& comparer = p.key_comp();
-  std::sort(
-      index2value.begin(),
-      index2value.end(),
-      [&comparer](const typename MP::value_type& l, const typename MP::value_type& r) {
-        return comparer(l.first, r.first);
-      }
-  );
-  p.adopt_sequence(std::move(index2value));
-  return std::move(p);
+
+  return MP(new_index2value_seq.begin(), new_index2value_seq.end(), p.get_allocator());
 }
 
 template <
     std::signed_integral IntType,
-    class R,
-    int D,
-    class Comparer = IndexComparer<IntType, D>,
-    class AllocatorOrContainer =
-        boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>>
-auto Integrate(
-    const MVPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>& p, std::size_t axis
-) {
-  return Integrate(MVPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>(p), axis);
-}
-
-template <
-    std::signed_integral IntType,
-    class R,
-    int D,
-    class Comparer,
-    class AllocatorOrContainer =
-        boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>>
+    std::floating_point  R,
+    int                  Dim,
+    class Allocator = std::allocator<std::pair<const IndexType<IntType, Dim>, R>>>
 auto Of(
-    const MVPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>&                      p,
-    const typename MVPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>::coord_type& x
+    const MVPolynomial<IntType, R, Dim, Allocator>&                      p,
+    const typename MVPolynomial<IntType, R, Dim, Allocator>::coord_type& x
 ) {
-  using MP                     = MVPolynomial<IntType, R, D, Comparer, AllocatorOrContainer>;
-  typename MP::mapped_type sum = 0;
+  using MP = MVPolynomial<IntType, R, Dim, Allocator>;
+
+  auto sum = typename MP::mapped_type(0);
   for (const auto& index_and_value : p) {
-    const auto& [index, value] = index_and_value;
-    sum += value * (x.array().pow(index.template cast<typename MP::mapped_type>())).prod();
+    const auto& index = index_and_value.first;
+    const auto& value = index_and_value.second;
+    sum += value * x.array().pow(index.template cast<typename MP::mapped_type>()).prod();
   }
   return sum;
-}
-
-template <class Iterator, class Coord>
-auto OfImpl(Iterator begin, Iterator end, int dim, std::size_t axis, const Coord& x) {
-  assert(axis >= 0 && axis < dim);
-  if (axis == dim - 1) {
-    auto [last_index, last_coeff] = *begin;
-    for (auto it = std::next(begin); it != end; ++it) {
-      const auto& [next_index, next_coeff] = *it;
-      last_coeff *= std::pow(x[axis], last_index[axis] - next_index[axis]);
-      last_coeff += next_coeff;
-      last_index = next_index;
-    }
-    last_coeff *= x.pow(last_index.template cast<typename Coord::Scalar>()).prod();
-    return last_coeff;
-  } else {
-    auto sum = typename Iterator::value_type::second_type(0);
-    while (true) {
-      const auto& [first_index, first_coeff] = *begin;
-      auto partition_point                   = std::partition_point(
-          begin,
-          end,
-          [axis, &first_index](const typename Iterator::value_type& pair) {
-            return pair.first[axis] == first_index[axis];
-          }
-      );
-      const auto& [p_index, p_coeff] = *partition_point;
-      sum += OfImpl(begin, partition_point, dim, axis + 1, x);
-      if (partition_point == end) {
-        // The calculation ends.
-        break;
-      }
-      begin = partition_point;
-    }
-    return sum;
-  }
-}
-
-template <
-    std::signed_integral IntType,
-    class R,
-    int D,
-    class AllocatorOrContainer =
-        boost::container::new_allocator<std::pair<IndexType<IntType, D>, R>>>
-auto Of(
-    const DefaultMVPolynomial<IntType, R, D, AllocatorOrContainer>&                      p,
-    const typename DefaultMVPolynomial<IntType, R, D, AllocatorOrContainer>::coord_type& x
-) {
-  using MP = DefaultMVPolynomial<IntType, R, D, AllocatorOrContainer>;
-  return OfImpl(p.cbegin(), p.cend(), MP::dim, 0, x);
 }
 
 }  // namespace mvPolynomial

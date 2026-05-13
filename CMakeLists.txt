@@ -40,8 +40,9 @@ list(APPEND extra_libs fmt::fmt)
 FetchContent_Declare(
   platanus
   GIT_REPOSITORY https://github.com/sukeya/platanus.git
-  GIT_TAG        origin/main # TODO Fix commit hash
+  GIT_TAG        4bcfdba128a9ae2645abd8c4e5e90019788073ad # origin/main
 )
+FetchContent_MakeAvailable(platanus)
 list(APPEND extra_libs platanus)
 
 

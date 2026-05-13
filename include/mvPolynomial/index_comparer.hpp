@@ -42,18 +42,13 @@ class IndexComparer final {
   }
 
   /**
-   * \brief If lhd[i] == rhd[i] for i = 0, ..., N - 1 and lhd[N] > rhd[N],
+   * \brief If lhd[i] == rhd[i] for i = 0, ..., N - 1 and lhd[N] < rhd[N],
    * return true: otherwise, false.
    * \param[in] lhd an index
    * \param[in] rhd an index
    */
-  static constexpr bool IsGreater(const Index& lhd, const Index& rhd) {
-    for (std::size_t i = 0; i != lhd.size(); ++i) {
-      if (lhd[i] > rhd[i]) {
-        return true;
-      }
-    }
-    return false;
+  constexpr bool operator()(const Index& lhd, const Index& rhd) const {
+    return Compare(lhd, rhd) == std::strong_ordering::less;
   }
 };
 }  // namespace mvPolynomial
