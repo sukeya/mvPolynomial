@@ -314,7 +314,7 @@ class MVPolynomial final {
     auto idx = index_type::Zero();
     for (auto& index_and_coeff : *this) {
       auto& coeff = index_and_coeff.second;
-      coeff *= 2;
+      coeff *= r;
     }
     return *this;
   }
