@@ -160,8 +160,7 @@ class MVPolynomial final {
   MVPolynomial(mapped_type r, const allocator_type& a = allocator_type{}) : index2value_({{index_type::Zero(), r}}, a) {}
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
-
-  Comparer key_comp() const noexcept { return index2value_.key_comp(); }
+  key_compare    key_comp() const noexcept { return index2value_.key_comp(); }
 
   iterator       begin() noexcept { return index2value_.begin(); }
   const_iterator begin() const noexcept { return index2value_.begin(); }
@@ -181,7 +180,8 @@ class MVPolynomial final {
   const_reverse_iterator crbegin() const noexcept { return index2value_.crbegin(); }
   const_reverse_iterator crend() const noexcept { return index2value_.crend(); }
 
-  bool      empty() const noexcept { return index2value_.empty(); }
+  bool empty() const noexcept { return index2value_.empty(); }
+
   size_type size() const noexcept { return index2value_.size(); }
   size_type max_size() const noexcept { return index2value_.max_size(); }
   size_type capacity() const noexcept { return index2value_.capacity(); }
