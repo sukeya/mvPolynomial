@@ -77,18 +77,11 @@ class MVPolynomial final {
   MVPolynomial& operator=(MVPolynomial&& other)      = default;
   ~MVPolynomial()                                    = default;
 
-  MVPolynomial()
-      : index2value_({
-            {index_type::Zero(), 0}
-  }) {}
+  MVPolynomial() : index2value_() { index2value_[index_type::Zero()] = R{0}; }
 
-  explicit MVPolynomial(const allocator_type& allocator)
-      : index2value_(
-            {
-                {index_type::Zero(), 0}
-  },
-            allocator
-        ) {}
+  explicit MVPolynomial(const allocator_type& allocator) : index2value_(allocator) {
+    index2value_[index_type::Zero()] = R{0};
+  }
 
   template <typename InputIterator>
   MVPolynomial(InputIterator s, InputIterator e) : index2value_(s, e) {
@@ -115,7 +108,9 @@ class MVPolynomial final {
     return *this;
   }
 
-  MVPolynomial(mapped_type r, const allocator_type& a = allocator_type{}) : index2value_({{index_type::Zero(), r}}, a) {}
+  MVPolynomial(mapped_type r, const allocator_type& a = allocator_type{}) : index2value_(a) {
+    index2value_[index_type::Zero()] = r;
+  }
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
   key_compare    key_comp() const noexcept { return index2value_.key_comp(); }
