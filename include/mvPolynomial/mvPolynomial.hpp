@@ -43,8 +43,7 @@ class MVPolynomial final {
   using coord_type = CoordType<R, dim>;
 
  private:
-  using Comparer       = IndexComparer<IntType, D>;
-  using IndexContainer = platanus::btree_map<index_type, R, Comparer, Allocator>;
+  using IndexContainer = platanus::btree_map<index_type, R, IndexComparer<IntType, D>, Allocator>;
 
  public:
   using key_type    = IndexContainer::key_type;
