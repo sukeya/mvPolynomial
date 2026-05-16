@@ -23,45 +23,6 @@ inline void CheckAxis(int dim, int axis) {
     );
   }
 }
-
-template <class Iterator, class Coord>
-auto OfImpl(Iterator begin, Iterator end, int dim, int axis, const Coord& x) {
-  using Index = std::remove_cvref_t<typename Iterator::value_type::first_type>;
-
-  CheckAxis(dim, axis);
-
-  if (axis == dim - 1) {
-    auto last_coeff = begin->second;
-    auto last_index = Index{begin->first};
-    for (auto it = std::next(begin); it != end; ++it) {
-      const auto& [next_index, next_coeff] = *it;
-      last_coeff *= std::pow(x[axis], last_index[axis] - next_index[axis]);
-      last_coeff += next_coeff;
-      last_index = next_index;
-    }
-    last_coeff *= x.pow(last_index.template cast<typename Coord::Scalar>()).prod();
-    return last_coeff;
-  } else {
-    auto sum = typename Iterator::value_type::second_type(0);
-    while (true) {
-      const auto& [first_index, first_coeff] = *begin;
-      auto partition_point                   = std::partition_point(
-          begin,
-          end,
-          [axis, &first_index](const typename Iterator::value_type& pair) {
-            return pair.first[axis] == first_index[axis];
-          }
-      );
-      sum += OfImpl(begin, partition_point, dim, axis + 1, x);
-      if (partition_point == end) {
-        // The calculation ends.
-        break;
-      }
-      begin = partition_point;
-    }
-    return sum;
-  }
-}
 }  // namespace details
 
 template <
@@ -291,14 +252,29 @@ class MVPolynomial final {
     }
   }
 
-  R operator()(const coord_type& x) const { return details::OfImpl(crbegin(), crend(), dim, 0, x); }
+  R operator()(const coord_type& x) const {
+    auto sum = R(0.0);
+    for (const auto& index_and_coeff : index2value_) {
+      auto        coeff = index_and_coeff.second;
+      const auto& index = index_and_coeff.first;
+      sum += coeff * (x.array().pow(index.template cast<double>())).prod();
+    }
+    return sum;
+  }
 
-  MVPolynomial operator()(const MVPolynomial& x, int axis) const {
+  MVPolynomial operator()(const MVPolynomial& mvp, int axis) const {
     details::CheckAxis(dim, axis);
 
     auto composed_mvp = MVPolynomial{get_allocator()};
-    composed_mvp.clear();
-    OfImpl(composed_mvp, rbegin(), rend(), 0, axis, x);
+    for (const auto& index_and_coeff : index2value_) {
+      auto        coeff = index_and_coeff.second;
+      const auto& index = index_and_coeff.first;
+
+      auto index_with_axis_0  = index;
+      index_with_axis_0[axis] = 0;
+      composed_mvp +=
+          MVPolynomial{{{index_with_axis_0, coeff}}, get_allocator()} * mvp.pow(index[axis]);
+    }
     return composed_mvp;
   }
 
@@ -468,91 +444,9 @@ class MVPolynomial final {
 
  private:
   void CheckSelfIndexes() const {
-    // The first index is the lowest index of all index,
-    // so I only have to check if each of its elements is non-negative.
-    if ((index2value_.begin()->first < 0).any()) {
-      throw std::invalid_argument("Negative index not supported!");
-    }
-  }
-
-  void OfImpl(
-      MVPolynomial&          composed_mvp,
-      const_reverse_iterator begin,
-      const_reverse_iterator end,
-      int                    i,
-      int                    axis,
-      const MVPolynomial&    x
-  ) const {
-    using Index = std::remove_cvref_t<typename const_iterator::value_type::first_type>;
-
-    details::CheckAxis(dim, i);
-
-    if (i == axis) {
-      if (begin->first[i] == 0) {
-        for (auto it = begin; it != end; ++it) {
-          if (composed_mvp.contains(it->first)) {
-            composed_mvp.at(it->first) += it->second;
-          } else {
-            composed_mvp.insert(*it);
-          }
-        }
-        return;
-      }
-      if (axis == dim - 1) {
-        auto last_mvp   = MVPolynomial{begin->second, get_allocator()};
-        auto last_index = Index{begin->first};
-        for (auto it = std::next(begin); it != end; ++it) {
-          const auto& [next_index, next_coeff] = *it;
-          last_mvp *= x.pow(last_index[i] - next_index[i]);
-          last_mvp += next_coeff;
-          last_index = next_index;
-        }
-        last_mvp *= MVPolynomial{{{last_index, 1}}, get_allocator()};
-        composed_mvp += last_mvp;
-        return;
-      }
-      auto mvp = MVPolynomial{get_allocator()};
-      mvp.clear();
-      while (true) {
-        const auto& [first_index, first_coeff] = *begin;
-        auto partition_point                   = std::partition_point(
-            begin,
-            end,
-            [axis, &first_index](const typename const_reverse_iterator::value_type& pair) {
-              return pair.first[axis] == first_index[axis];
-            }
-        );
-        for (auto it = begin; it != partition_point; ++it) {
-          auto index = Index{it->first};
-          // set the index of axis to 0 for multiplying powed `x` all at once.
-          index[axis] = 0;
-          mvp.insert(std::make_pair(index, it->second));
-        }
-        composed_mvp += mvp * x.pow(first_index[axis]);
-
-        // The calculation ends.
-        if (partition_point == end) {
-          break;
-        }
-        begin = partition_point;
-        mvp.clear();
-      }
-    } else {
-      while (true) {
-        const auto& [first_index, first_coeff] = *begin;
-        auto partition_point                   = std::partition_point(
-            begin,
-            end,
-            [i, &first_index](const typename const_reverse_iterator::value_type& pair) {
-              return pair.first[i] == first_index[i];
-            }
-        );
-        OfImpl(composed_mvp, begin, partition_point, i + 1, axis, x);
-        if (partition_point == end) {
-          // The calculation ends.
-          break;
-        }
-        begin = partition_point;
+    for (const auto& index_and_coeff : index2value_) {
+      if ((index_and_coeff.first < 0).any()) {
+        throw std::invalid_argument("Negative index not supported!");
       }
     }
   }
