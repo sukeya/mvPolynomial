@@ -257,6 +257,34 @@ TEST_CASE("integral", "[mvPolynomial]") {
       REQUIRE(sm[ans[i].first] == ans[i].second);
     }
   }
+
+  SECTION("constant term preserves searchable ordering") {
+    auto c  = MP2({
+        {{0, 0}, 9},
+    });
+    auto sc = mvPolynomial::Integrate(c, 1);
+
+    REQUIRE(sc.size() == 1);
+    REQUIRE(sc.contains(Eigen::Array2i({0, 1})));
+    REQUIRE(sc.find(Eigen::Array2i({0, 1})) != sc.end());
+    REQUIRE(sc.lower_bound(Eigen::Array2i({0, 1})) != sc.end());
+    REQUIRE((sc.lower_bound(Eigen::Array2i({0, 1}))->first == Eigen::Array2i({0, 1})).all());
+    REQUIRE(sc.at(Eigen::Array2i({0, 1})) == 9);
+  }
+
+  SECTION("higher degree term keeps lookup behavior") {
+    auto high = MP2({
+        {{3, 2}, 8},
+    });
+    auto shi  = mvPolynomial::Integrate(high, 0);
+
+    REQUIRE(shi.size() == 1);
+    REQUIRE(shi.contains(Eigen::Array2i({4, 2})));
+    REQUIRE(shi.find(Eigen::Array2i({4, 2})) != shi.end());
+    REQUIRE(shi.lower_bound(Eigen::Array2i({4, 2})) != shi.end());
+    REQUIRE((shi.lower_bound(Eigen::Array2i({4, 2}))->first == Eigen::Array2i({4, 2})).all());
+    REQUIRE(shi.at(Eigen::Array2i({4, 2})) == 2);
+  }
 }
 
 TEST_CASE("multiply", "[mvPolynomial]") {
@@ -289,6 +317,30 @@ TEST_CASE("multiply", "[mvPolynomial]") {
   REQUIRE(prod.size() == ans.size());
   for (size_t i = 0; i < ans.size(); ++i) {
     REQUIRE(prod[ans[i].first] == ans[i].second);
+  }
+
+  SECTION("multiply assign by monomial matches binary multiply") {
+    auto lhs      = MP2({
+        {{1, 0}, 2},
+        {{0, 1}, 3},
+    });
+    auto monomial = MP2({
+        {{2, 1}, 5},
+    });
+    auto expected = MP2({
+        {{3, 1}, 10},
+        {{2, 2}, 15},
+    });
+
+    auto inplace = lhs;
+    inplace *= monomial;
+
+    REQUIRE(inplace == expected);
+    REQUIRE(inplace == lhs * monomial);
+    REQUIRE(inplace.contains(Eigen::Array2i({3, 1})));
+    REQUIRE(inplace.find(Eigen::Array2i({2, 2})) != inplace.end());
+    REQUIRE(inplace.lower_bound(Eigen::Array2i({2, 2})) != inplace.end());
+    REQUIRE((inplace.lower_bound(Eigen::Array2i({2, 2}))->first == Eigen::Array2i({2, 2})).all());
   }
 }
 

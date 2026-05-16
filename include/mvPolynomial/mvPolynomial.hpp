@@ -318,12 +318,18 @@ class MVPolynomial final {
   MVPolynomial& operator*=(const MVPolynomial& r) {
     if (r.size() == 1) {
       const auto& [r_index, r_coeff] = *(r.begin());
-      for (auto& index_and_coeff : *this) {
-        auto& index = const_cast<index_type&>(index_and_coeff.first);
-        auto& coeff = index_and_coeff.second;
-        index += r_index;
-        coeff *= r_coeff;
+      auto result                    = MVPolynomial(get_allocator());
+      result.index2value_.clear();
+      for (const auto& [index, coeff] : *this) {
+        const auto new_index = index + r_index;
+        const auto new_coeff = coeff * r_coeff;
+        if (result.contains(new_index)) {
+          result[new_index] += new_coeff;
+        } else {
+          result[new_index] = new_coeff;
+        }
       }
+      swap(result);
     } else {
       *this = *this * r;
     }
@@ -456,12 +462,18 @@ auto Integrate(MVPolynomial<IntType, R, D, Allocator> p, int axis) {
 
   details::CheckAxis(D, axis);
 
-  for (auto& index_and_value : p) {
-    auto& value = index_and_value.second;
-    auto& index = const_cast<typename MP::index_type&>(index_and_value.first);
-    value /= ++index[axis];
+  auto result = MP(std::initializer_list<typename MP::value_type>{}, p.get_allocator());
+  for (const auto& [index, value] : p) {
+    auto new_index = index;
+    ++new_index[axis];
+    const auto new_value = value / new_index[axis];
+    if (result.contains(new_index)) {
+      result[new_index] += new_value;
+    } else {
+      result[new_index] = new_value;
+    }
   }
-  return std::move(p);
+  return result;
 }
 
 }  // namespace mvPolynomial
