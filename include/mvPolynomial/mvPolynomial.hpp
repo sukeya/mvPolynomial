@@ -133,8 +133,6 @@ class MVPolynomial final {
   const_reverse_iterator crbegin() const noexcept { return index2value_.crbegin(); }
   const_reverse_iterator crend() const noexcept { return index2value_.crend(); }
 
-  bool empty() const noexcept { return index2value_.empty(); }
-
   size_type size() const noexcept { return index2value_.size(); }
   size_type max_size() const noexcept { return index2value_.max_size(); }
   size_type capacity() const noexcept { return index2value_.capacity(); }
