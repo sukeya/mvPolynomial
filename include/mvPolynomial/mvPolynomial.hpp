@@ -6,10 +6,13 @@
 
 #include <algorithm>
 #include <bit>
+#include <cassert>
 #include <cmath>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <type_traits>
+#include <vector>
 
 #include "fmt/core.h"
 #include "platanus/btree_map.hpp"
