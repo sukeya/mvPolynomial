@@ -596,7 +596,7 @@ auto D(const MVPolynomial<IntType, R, Dim, Allocator>& p, int axis) {
 }
 
 template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
-auto Integrate(MVPolynomial<IntType, R, D, Allocator>&& p, int axis) {
+auto Integrate(MVPolynomial<IntType, R, D, Allocator> p, int axis) {
   using MP = MVPolynomial<IntType, R, D, Allocator>;
 
   details::CheckAxis(D, axis);
@@ -607,11 +607,6 @@ auto Integrate(MVPolynomial<IntType, R, D, Allocator>&& p, int axis) {
     value /= ++index[axis];
   }
   return std::move(p);
-}
-
-template <std::signed_integral IntType, std::floating_point R, int D, class Allocator>
-auto Integrate(const MVPolynomial<IntType, R, D, Allocator>& p, int axis) {
-  return Integrate(MVPolynomial<IntType, R, D, Allocator>(p, p.get_allocator()), axis);
 }
 
 }  // namespace mvPolynomial
