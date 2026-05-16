@@ -18,9 +18,7 @@ namespace mvPolynomial {
 namespace details {
 inline void CheckAxis(int dim, int axis) {
   if (axis < 0 || axis >= dim) {
-    throw std::runtime_error(
-        fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim)
-    );
+    throw std::runtime_error(fmt::format("CheckAxis: Given axis {} must be in [0, {}).", axis, dim));
   }
 }
 }  // namespace details
@@ -95,20 +93,17 @@ class MVPolynomial final {
   }
 
   template <typename InputIterator>
-  MVPolynomial(InputIterator s, InputIterator e, const allocator_type& allocator)
-      : index2value_(s, e, allocator) {
+  MVPolynomial(InputIterator s, InputIterator e, const allocator_type& allocator) : index2value_(s, e, allocator) {
     CheckSelfIndexes();
   }
 
-  MVPolynomial(std::initializer_list<value_type> l, const allocator_type& a = allocator_type{})
-      : index2value_(l, a) {
+  MVPolynomial(std::initializer_list<value_type> l, const allocator_type& a = allocator_type{}) : index2value_(l, a) {
     CheckSelfIndexes();
   }
 
   MVPolynomial(const MVPolynomial& m, const allocator_type& a) : index2value_(m.index2value_, a) {}
 
-  MVPolynomial(MVPolynomial&& m, const allocator_type& a)
-      : index2value_(std::move(m.index2value_), a) {}
+  MVPolynomial(MVPolynomial&& m, const allocator_type& a) : index2value_(std::move(m.index2value_), a) {}
 
   MVPolynomial& operator=(std::initializer_list<value_type> l) {
     index2value_.clear();
@@ -249,8 +244,7 @@ class MVPolynomial final {
 
       auto index_with_axis_0  = index;
       index_with_axis_0[axis] = 0;
-      composed_mvp +=
-          MVPolynomial{{{index_with_axis_0, coeff}}, get_allocator()} * mvp.pow(index[axis]);
+      composed_mvp += MVPolynomial{{{index_with_axis_0, coeff}}, get_allocator()} * mvp.pow(index[axis]);
     }
     return composed_mvp;
   }
@@ -375,9 +369,7 @@ class MVPolynomial final {
     return std::move(l);
   }
 
-  friend MVPolynomial operator+(const MVPolynomial& l, MVPolynomial&& r) {
-    return std::move(r) + l;
-  }
+  friend MVPolynomial operator+(const MVPolynomial& l, MVPolynomial&& r) { return std::move(r) + l; }
 
   friend MVPolynomial operator+(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) + r; }
 
@@ -390,9 +382,7 @@ class MVPolynomial final {
     return std::move(l);
   }
 
-  friend MVPolynomial operator-(const MVPolynomial& l, MVPolynomial&& r) {
-    return -std::move(r) + l;
-  }
+  friend MVPolynomial operator-(const MVPolynomial& l, MVPolynomial&& r) { return -std::move(r) + l; }
 
   friend MVPolynomial operator-(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) - r; }
 
