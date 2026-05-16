@@ -16,7 +16,7 @@ TEST_CASE("constructor", "[mvPolynomial]") {
     auto m   = MP2();
 
     REQUIRE(m.size() == ans.size());
-    for (auto i = 0; i < ans.size(); ++i) {
+    for (size_t i = 0; i < ans.size(); ++i) {
       REQUIRE(m[ans[i].first] == ans[i].second);
     }
   }
@@ -343,7 +343,7 @@ TEST_CASE("sub", "[mvPolynomial]") {
   auto sub = l - r;
 
   REQUIRE(sub.size() == ans.size());
-  for (auto i = 0; i < ans.size(); ++i) {
+  for (size_t i = 0; i < ans.size(); ++i) {
     REQUIRE(sub[ans[i].first] == ans[i].second);
   }
 }

@@ -390,8 +390,6 @@ class MVPolynomial final {
   friend MVPolynomial operator-(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) - r; }
 
   friend MVPolynomial operator*(const MVPolynomial& l, const MVPolynomial& r) {
-    auto comparer = l.key_comp();
-
     auto mul = MVPolynomial(l.get_allocator());
     mul.index2value_.clear();
     // Calculate all product of each l's term and r's term.
