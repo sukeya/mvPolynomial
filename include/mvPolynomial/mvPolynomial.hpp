@@ -294,7 +294,7 @@ class MVPolynomial final {
     if (contains(idx)) {
       (*this)[idx] -= r;
     } else {
-      (*this)[idx] = r;
+      (*this)[idx] = -r;
     }
     return *this;
   }
