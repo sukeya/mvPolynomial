@@ -264,6 +264,13 @@ TEST_CASE("constructor", "[mvPolynomial]") {
 }
 
 TEST_CASE("invariants", "[mvPolynomial]") {
+  auto require_canonical_zero = [](const MP2& p) {
+    REQUIRE(p.size() == 1);
+    REQUIRE(p == MP2());
+    REQUIRE(p.contains(Eigen::Array2i::Zero()));
+    REQUIRE(p.get(Eigen::Array2i::Zero()) == 0);
+  };
+
   SECTION("subtracting self stays canonical zero polynomial") {
     auto p = MP2({
         {{0, 0}, 1},
@@ -273,10 +280,7 @@ TEST_CASE("invariants", "[mvPolynomial]") {
 
     p -= p;
 
-    REQUIRE(p.size() == 1);
-    REQUIRE(p == MP2());
-    REQUIRE(p.contains(Eigen::Array2i::Zero()));
-    REQUIRE(p.get(Eigen::Array2i::Zero()) == 0);
+    require_canonical_zero(p);
   }
 
   SECTION("multiplying by zero stays canonical zero polynomial") {
@@ -288,10 +292,7 @@ TEST_CASE("invariants", "[mvPolynomial]") {
 
     p *= 0.0;
 
-    REQUIRE(p.size() == 1);
-    REQUIRE(p == MP2());
-    REQUIRE(p.contains(Eigen::Array2i::Zero()));
-    REQUIRE(p.get(Eigen::Array2i::Zero()) == 0);
+    require_canonical_zero(p);
   }
 
   SECTION("set rejects negative index for lvalue and rvalue keys") {
@@ -314,6 +315,46 @@ TEST_CASE("invariants", "[mvPolynomial]") {
     REQUIRE(p == MP2(1));
     REQUIRE_FALSE(p.contains(Eigen::Array2i({1, 0})));
     REQUIRE(p.get(Eigen::Array2i::Zero()) == 1);
+  }
+
+  SECTION("scalar addition and subtraction preserve canonical zero") {
+    auto p = MP2(2.0);
+
+    p += -2.0;
+    require_canonical_zero(p);
+
+    p -= 0.0;
+    require_canonical_zero(p);
+  }
+
+  SECTION("polynomial addition preserves canonical zero after cancellation") {
+    auto p = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 2},
+    });
+    auto q = MP2({
+        {{0, 0}, -1},
+        {{1, 0}, -2},
+    });
+
+    p += q;
+
+    require_canonical_zero(p);
+  }
+
+  SECTION("polynomial subtraction preserves canonical zero after cancellation") {
+    auto p = MP2({
+        {{0, 0}, 1},
+        {{0, 1}, 3},
+    });
+    auto q = MP2({
+        {{0, 0}, 1},
+        {{0, 1}, 3},
+    });
+
+    p -= q;
+
+    require_canonical_zero(p);
   }
 }
 
@@ -592,6 +633,16 @@ TEST_CASE("D", "[mvPolynomial]") {
       REQUIRE(dm1.get(ans[i].first) == ans[i].second);
     }
   }
+
+  SECTION("zero result stays canonical zero polynomial") {
+    auto constant = MP2(7.0);
+    auto dx       = mvPolynomial::D(constant, 0);
+
+    REQUIRE(dx.size() == 1);
+    REQUIRE(dx == MP2());
+    REQUIRE(dx.contains(Eigen::Array2i::Zero()));
+    REQUIRE(dx.get(Eigen::Array2i::Zero()) == 0);
+  }
 }
 
 TEST_CASE("integral", "[mvPolynomial]") {
@@ -665,6 +716,16 @@ TEST_CASE("integral", "[mvPolynomial]") {
     REQUIRE((shi.lower_bound(Eigen::Array2i({4, 2}))->first == Eigen::Array2i({4, 2})).all());
     REQUIRE(shi.get(Eigen::Array2i({4, 2})) == 2);
   }
+
+  SECTION("zero polynomial stays canonical zero after integration") {
+    auto zero = MP2();
+    auto sz   = mvPolynomial::Integrate(zero, 0);
+
+    REQUIRE(sz.size() == 1);
+    REQUIRE(sz == MP2());
+    REQUIRE(sz.contains(Eigen::Array2i::Zero()));
+    REQUIRE(sz.get(Eigen::Array2i::Zero()) == 0);
+  }
 }
 
 TEST_CASE("multiply", "[mvPolynomial]") {
@@ -721,6 +782,24 @@ TEST_CASE("multiply", "[mvPolynomial]") {
     REQUIRE(inplace.find(Eigen::Array2i({2, 2})) != inplace.end());
     REQUIRE(inplace.lower_bound(Eigen::Array2i({2, 2})) != inplace.end());
     REQUIRE((inplace.lower_bound(Eigen::Array2i({2, 2}))->first == Eigen::Array2i({2, 2})).all());
+  }
+
+  SECTION("multiplication normalizes zero coefficient collisions") {
+    auto cancel_l = MP2({
+        {{0, 0},  1},
+        {{1, 0}, -1},
+    });
+    auto cancel_r = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 1},
+    });
+
+    auto cancel_prod = cancel_l * cancel_r;
+
+    REQUIRE(cancel_prod.size() == 2);
+    REQUIRE(cancel_prod.get(Eigen::Array2i({0, 0})) == 1);
+    REQUIRE_FALSE(cancel_prod.contains(Eigen::Array2i({1, 0})));
+    REQUIRE(cancel_prod.get(Eigen::Array2i({2, 0})) == -1);
   }
 }
 
