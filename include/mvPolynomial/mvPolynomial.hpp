@@ -275,16 +275,40 @@ class MVPolynomial final {
   MVPolynomial operator()(const MVPolynomial& mvp, int axis) const {
     details::CheckAxis(dim, axis);
 
-    auto composed_mvp = MVPolynomial{get_allocator()};
-    for (const auto& index_and_coeff : index2value_) {
-      auto        coeff = index_and_coeff.second;
-      const auto& index = index_and_coeff.first;
+    auto partial_sums = std::vector<MVPolynomial>{get_allocator()};
+    auto partial_sum  = MVPolynomial{rbegin()->second, get_allocator()};
+    for (auto it = rbegin(); it != std::prev(rend()); ++it) {
+      const auto& index = it->first;
 
-      auto index_with_axis_0  = index;
-      index_with_axis_0[axis] = 0;
-      composed_mvp += MVPolynomial{{{index_with_axis_0, coeff}}, get_allocator()} * mvp.pow(index[axis]);
+      auto        next_it    = std::next(it);
+      auto        next_coeff = next_it->second;
+      const auto& next_index = next_it->first;
+
+      index_type index_diff              = index - next_index;
+      index_type index_diff_without_axis = index_diff;
+      index_diff_without_axis[axis]      = 0;
+
+      if ((index_diff > 0).all()) {
+        auto tmp_mvp = MVPolynomial{{{index_diff_without_axis, 1}}, get_allocator()};
+        partial_sum  = next_coeff + partial_sum * (mvp.pow(index[axis])) * tmp_mvp;
+      } else {
+        index_type index_without_axis = index;
+        index_without_axis[axis]      = 0;
+        auto tmp_mvp                  = MVPolynomial{{{index_without_axis, 1}}, get_allocator()};
+
+        partial_sum *= mvp.pow(index[axis]) * tmp_mvp;
+        partial_sums.push_back(std::move(partial_sum));
+        partial_sum = MVPolynomial{next_coeff, get_allocator()};
+      }
     }
-    return composed_mvp;
+    {
+      const auto& first_index              = begin()->first;
+      index_type  first_index_without_axis = first_index;
+      first_index_without_axis[axis]       = 0;
+      auto tmp_mvp                         = MVPolynomial{{{first_index_without_axis, 1}}, get_allocator()};
+      partial_sum *= mvp.pow(first_index[axis]) * tmp_mvp;
+    }
+    return std::reduce(partial_sums.cbegin(), partial_sums.cend()) + partial_sum;
   }
 
   MVPolynomial operator+() const { return *this; }

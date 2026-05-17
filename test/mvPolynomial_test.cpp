@@ -198,6 +198,26 @@ TEST_CASE("operator()", "[mvPolynomial]") {
     );
   }
 
+  SECTION("mvpolynomial_1d_without_constant") {
+    auto m = MP3({
+        {{1, 0, 0}, 2},
+        {{0, 1, 0}, 3},
+        {{0, 0, 1}, 4},
+    });
+    auto x = MP3({
+        {{0, 0, 0}, 1},
+        {{1, 0, 0}, 2},
+        {{0, 1, 0}, 3},
+    });
+    REQUIRE(
+        m(x, 2) == MP3({
+                       {{0, 0, 0},  4},
+                       {{1, 0, 0}, 10},
+                       {{0, 1, 0}, 15},
+    })
+    );
+  }
+
   SECTION("mvpolynomial_2d") {
     auto m = MP3({
         {{0, 0, 0}, 1},
