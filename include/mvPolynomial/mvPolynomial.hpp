@@ -231,25 +231,17 @@ class MVPolynomial final {
 
   void DeleteZeroCoeffTerm() {
     std::vector<size_t> removed_term_indexes;
-    bool                should_set_const_zero = false;
     for (size_t i = 0; const auto& index_and_coeff : index2value_) {
-      auto        coeff = index_and_coeff.second;
-      const auto& index = index_and_coeff.first;
-      if ((index == index_type::Zero()).all()) {
-        if (coeff < abs_tolerance) {
-          should_set_const_zero = true;
-        }
-      }
-      if (std::abs(coeff) < abs_tolerance) {
+      if (std::abs(index_and_coeff.second) < abs_tolerance) {
         removed_term_indexes.push_back(i);
       }
       ++i;
     }
-    if (should_set_const_zero) {
-      index2value_[index_type::Zero()] = R(0.0);
-    }
     for (auto removed_index : removed_term_indexes | std::views::reverse) {
       index2value_.erase(std::next(index2value_.begin(), removed_index));
+    }
+    if (index2value_.empty()) {
+      index2value_[index_type::Zero()] = R{0.0};
     }
   }
 
@@ -344,7 +336,6 @@ class MVPolynomial final {
   }
 
   MVPolynomial& operator*=(mapped_type r) {
-    auto idx = index_type::Zero();
     for (auto& index_and_coeff : *this) {
       auto& coeff = index_and_coeff.second;
       coeff *= r;

@@ -1,6 +1,7 @@
 #include "mvPolynomial/mvPolynomial.hpp"
 
 #include <cstddef>
+#include <stdexcept>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -62,6 +63,55 @@ TEST_CASE("constructor", "[mvPolynomial]") {
     for (size_t i = 0; i < ans.size(); ++i) {
       REQUIRE(m.at(ans[i].first) == ans[i].second);
     }
+  }
+
+  SECTION("negative index is rejected") {
+    REQUIRE_THROWS_AS(
+        MP2({
+            {{-1, 0}, 1},
+    }),
+        std::invalid_argument
+    );
+  }
+}
+
+TEST_CASE("invariants", "[mvPolynomial]") {
+  SECTION("subtracting self stays canonical zero polynomial") {
+    auto p = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 2},
+        {{0, 1}, 3},
+    });
+
+    p -= p;
+
+    REQUIRE(p.size() == 1);
+    REQUIRE(p == MP2());
+    REQUIRE(p.contains(Eigen::Array2i::Zero()));
+    REQUIRE(p.at(Eigen::Array2i::Zero()) == 0);
+  }
+
+  SECTION("multiplying by zero stays canonical zero polynomial") {
+    auto p = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 2},
+        {{0, 1}, 3},
+    });
+
+    p *= 0.0;
+
+    REQUIRE(p.size() == 1);
+    REQUIRE(p == MP2());
+    REQUIRE(p.contains(Eigen::Array2i::Zero()));
+    REQUIRE(p.at(Eigen::Array2i::Zero()) == 0);
+  }
+
+  SECTION("operator[] rejects negative index for lvalue and rvalue keys") {
+    auto p       = MP2();
+    auto bad_key = Eigen::Array2i({-1, 0});
+
+    REQUIRE_THROWS_AS(p[bad_key] = 1.0, std::invalid_argument);
+    REQUIRE_THROWS_AS(p[Eigen::Array2i({0, -1})] = 2.0, std::invalid_argument);
   }
 }
 
