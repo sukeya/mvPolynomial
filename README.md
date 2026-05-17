@@ -33,17 +33,81 @@ The examples exist in "test" directory.
 
 ## Multi-variable polynomial
 A class `MVPolynomial` implements multi-variable polynomials.
-Its interface is the same as Boost's flat_map except that it lacks `merge` member function.
-So, please see the document of Boost's flat_map.
 
-A class `ExactOf` calculates f of x as less multiplication as possible, but uses more memories.
+```cpp
+#include "mvPolynomial/mvPolynomial.hpp"
 
-## Polynomial product
-A class `PolynomialProduct` implements a product of polynomials which have different variable each other (example: (1 + x + x^2) * (y + 6 * y^3 + y^10) * (1 + z)).
-Its interface is the same as std::array.
-So, please see the document of std::array.
+using MP2 = mvPolynomial::MVPolynomial<int, double, 2>;
+```
 
-## Polynomial
-A class `Polynomial` implements one-variable polynomials.
-Its interface is also the same as Boost's flat_map except that it lacks `merge` member function.
-So, please see the document of Boost's flat_map.
+You can construct a polynomial from an initializer list of `(index, coefficient)` pairs.
+
+```cpp
+auto p = MP2({
+    {{0, 0}, 1.0},
+    {{1, 0}, 2.0},
+    {{0, 1}, 3.0},
+});
+```
+
+The constant term is the zero index.
+
+```cpp
+double c = p.get(Eigen::Array2i::Zero());
+p.set(Eigen::Array2i({2, 0}), 5.0);
+```
+
+If you want to read a term that may be absent, use `try_get`.
+
+```cpp
+auto maybe_xy = p.try_get(Eigen::Array2i({1, 1}));
+if (maybe_xy.has_value()) {
+  double coeff = *maybe_xy;
+}
+```
+
+`set(index, 0.0)` removes the term, and zero-coefficient terms are normalized away automatically.
+
+The class provides basic polynomial arithmetic.
+
+```cpp
+auto q   = MP2({
+    {{0, 0}, 4.0},
+    {{1, 0}, 1.0},
+});
+auto sum = p + q;
+auto sub = p - q;
+auto mul = p * q;
+auto div = p / 2.0;
+auto pw  = p.pow(3);
+```
+
+`p /= scalar` and `p / scalar` are supported. Division by zero scalar throws `std::invalid_argument`.
+
+You can evaluate a polynomial at a point.
+
+```cpp
+double value = p(Eigen::Vector2d({2.0, 3.0}));
+```
+
+You can also substitute a polynomial for one axis.
+
+```cpp
+auto x = MP2({
+    {{0, 0}, 1.0},
+    {{1, 0}, 2.0},
+});
+auto composed = p(x, 1);
+```
+
+Differentiation and integration are available both as member functions and as free functions.
+
+```cpp
+auto dx_member = p.D(0);
+auto iy_member = p.Integrate(1);
+
+auto dx = mvPolynomial::D(p, 0);
+auto iy = mvPolynomial::Integrate(p, 1);
+```
+
+Negative indices are not supported and cause `std::invalid_argument`.

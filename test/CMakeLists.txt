@@ -9,7 +9,7 @@ FetchContent_MakeAvailable(Catch2)
 add_executable(mvPolynomial_test mvPolynomial_test.cpp)
 target_compile_options(
   mvPolynomial_test
-  INTERFACE
+  PRIVATE
     # Common options for gcc and clang
     "$<${gcc_like}:-Wall;-Wextra;-Werror>"
     "$<${msvc}:/Wall;/WX>"
