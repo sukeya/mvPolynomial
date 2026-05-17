@@ -140,8 +140,14 @@ class MVPolynomial final {
   size_type max_size() const noexcept { return index2value_.max_size(); }
   size_type capacity() const noexcept { return index2value_.capacity(); }
 
-  mapped_type& operator[](const key_type& index) { return index2value_[index]; }
-  mapped_type& operator[](key_type&& index) { return index2value_[index]; }
+  mapped_type& operator[](const key_type& index) {
+    CheckIndexIncludingNegative(index);
+    return index2value_[index];
+  }
+  mapped_type& operator[](key_type&& index) {
+    CheckIndexIncludingNegative(index);
+    return index2value_[index];
+  }
 
   mapped_type&       at(const key_type& i) { return index2value_.at(i); }
   const mapped_type& at(const key_type& i) const { return index2value_.at(i); }
@@ -225,9 +231,8 @@ class MVPolynomial final {
 
   void DeleteZeroCoeffTerm() {
     std::vector<size_t> removed_term_indexes;
-    size_t              i                     = 0;
     bool                should_set_const_zero = false;
-    for (const auto& index_and_coeff : index2value_) {
+    for (size_t i = 0; const auto& index_and_coeff : index2value_) {
       auto        coeff = index_and_coeff.second;
       const auto& index = index_and_coeff.first;
       if ((index == index_type::Zero()).all()) {
@@ -453,11 +458,15 @@ class MVPolynomial final {
   }
 
  private:
+  void CheckIndexIncludingNegative(const index_type& index) const {
+    if ((index < 0).any()) {
+      throw std::invalid_argument("Negative index not supported!");
+    }
+  }
+
   void CheckSelfIndexes() const {
     for (const auto& index_and_coeff : index2value_) {
-      if ((index_and_coeff.first < 0).any()) {
-        throw std::invalid_argument("Negative index not supported!");
-      }
+      CheckIndexIncludingNegative(index_and_coeff.first);
     }
   }
 
