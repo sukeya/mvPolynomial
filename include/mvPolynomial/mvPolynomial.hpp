@@ -15,6 +15,7 @@
 #include <numeric>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -188,7 +189,7 @@ class MVPolynomial final {
 
   MVPolynomial pow(int exp) const {
     if (exp < 0) {
-      throw std::invalid_argument("Given exp must be positive.");
+      throw std::invalid_argument(std::string("Given exp must be positive."));
     }
     switch (exp) {
       case 0:
@@ -587,7 +588,7 @@ class MVPolynomial final {
 
   void CheckIndexIncludingNegative(const index_type& index) const {
     if ((index < 0).any()) {
-      throw std::invalid_argument("Negative index not supported!");
+      throw std::invalid_argument(std::string("Negative index not supported!"));
     }
   }
 
@@ -599,7 +600,7 @@ class MVPolynomial final {
 
   void CheckScalarDivisor(mapped_type divisor) const {
     if (std::abs(divisor) < abs_tolerance) {
-      throw std::invalid_argument("Division by zero scalar not supported!");
+      throw std::invalid_argument(std::string("Division by zero scalar not supported!"));
     }
   }
 
