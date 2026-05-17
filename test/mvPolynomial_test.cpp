@@ -300,6 +300,33 @@ TEST_CASE("invariants", "[mvPolynomial]") {
     REQUIRE(p.get(Eigen::Array2i::Zero()) == 0);
   };
 
+  SECTION("try_get returns value for existing term and nullopt otherwise") {
+    auto p = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 2},
+        {{0, 1}, 3},
+    });
+
+    auto constant = p.try_get(Eigen::Array2i::Zero());
+    auto x_term   = p.try_get(Eigen::Array2i({1, 0}));
+    auto missing  = p.try_get(Eigen::Array2i({2, 2}));
+
+    REQUIRE(constant.has_value());
+    REQUIRE(*constant == 1);
+    REQUIRE(x_term.has_value());
+    REQUIRE(*x_term == 2);
+    REQUIRE_FALSE(missing.has_value());
+  }
+
+  SECTION("try_get sees canonical zero term on zero polynomial") {
+    auto zero = MP2();
+    auto term = zero.try_get(Eigen::Array2i::Zero());
+
+    REQUIRE(term.has_value());
+    REQUIRE(*term == 0);
+    REQUIRE_FALSE(zero.try_get(Eigen::Array2i({1, 0})).has_value());
+  }
+
   SECTION("subtracting self stays canonical zero polynomial") {
     auto p = MP2({
         {{0, 0}, 1},

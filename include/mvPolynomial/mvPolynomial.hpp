@@ -14,7 +14,6 @@
 #include <memory>
 #include <numeric>
 #include <optional>
-#include <ranges>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
@@ -150,17 +149,16 @@ class MVPolynomial final {
   size_type max_size() const noexcept { return index2value_.max_size(); }
   size_type capacity() const noexcept { return index2value_.capacity(); }
 
-  const mapped_type& get(const key_type& index) const { return index2value_.at(index); }
+  mapped_type get(const key_type& index) const { return index2value_.at(index); }
 
-  std::optional<const mapped_type&> try_get(const key_type& index) const {
-    if (contains(index)) {
-      return index2value_[index];
-    } else {
-      return std::nullopt;
+  std::optional<mapped_type> try_get(const key_type& index) const {
+    if (auto it = index2value_.find(index); it != index2value_.end()) {
+      return it->second;
     }
+    return std::nullopt;
   }
 
-  void set(const key_type& index, R coeff) { AssignCoeff(index, coeff); }
+  void set(const key_type& index, mapped_type coeff) { AssignCoeff(index, coeff); }
 
   void swap(MVPolynomial& m) { index2value_.swap(m.index2value_); }
 
@@ -364,8 +362,9 @@ class MVPolynomial final {
     auto        copied_r = (&r == this) ? std::optional<MVPolynomial>(MVPolynomial(r, get_allocator())) : std::nullopt;
     const auto& rhs      = copied_r ? *copied_r : r;
     for (const auto& [idx, coeff] : rhs) {
-      AddCoeff(idx, coeff);
+      AddCoeffRaw(idx, coeff);
     }
+    Normalize();
     return *this;
   }
 
@@ -378,8 +377,9 @@ class MVPolynomial final {
     auto        copied_r = (&r == this) ? std::optional<MVPolynomial>(MVPolynomial(r, get_allocator())) : std::nullopt;
     const auto& rhs      = copied_r ? *copied_r : r;
     for (const auto& [idx, coeff] : rhs) {
-      AddCoeff(idx, -coeff);
+      AddCoeffRaw(idx, -coeff);
     }
+    Normalize();
     return *this;
   }
 
@@ -490,19 +490,16 @@ class MVPolynomial final {
 
  private:
   void Normalize() {
-    auto removed_term_indexes = rebound_vector_type<size_type>(rebound_allocator_type<size_type>(get_allocator()));
-    for (size_t i = 0; const auto& index_and_coeff : index2value_) {
-      if (std::abs(index_and_coeff.second) < abs_tolerance) {
-        removed_term_indexes.push_back(i);
+    auto normalized = IndexContainer(get_allocator());
+    for (const auto& [index, coeff] : index2value_) {
+      if (std::abs(coeff) >= abs_tolerance) {
+        normalized[index] = coeff;
       }
-      ++i;
     }
-    for (auto removed_index : removed_term_indexes | std::views::reverse) {
-      index2value_.erase(std::next(index2value_.begin(), removed_index));
+    if (normalized.empty()) {
+      normalized[index_type::Zero()] = R{0};
     }
-    if (index2value_.empty()) {
-      AssignCoeffRaw(index_type::Zero(), R{0});
-    }
+    index2value_.swap(normalized);
   }
 
   void NormalizeSingle(const key_type& index) {
