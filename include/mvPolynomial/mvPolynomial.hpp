@@ -8,8 +8,10 @@
 #include <bit>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <iterator>
 #include <limits>
+#include <ranges>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
@@ -38,7 +40,8 @@ class MVPolynomial final {
   static constexpr int dim = D;
 
   // This setting is too strict, so I expect users to set tolerance.
-  static R tolerance;
+  inline static R rel_tolerance = std::numeric_limits<R>::epsilon();
+  inline static R abs_tolerance = std::numeric_limits<R>::min();
 
   using index_type = IndexType<IntType, D>;
   using coord_type = CoordType<R, dim>;
@@ -220,6 +223,31 @@ class MVPolynomial final {
     }
   }
 
+  void DeleteZeroCoeffTerm() {
+    std::vector<size_t> removed_term_indexes;
+    size_t              i                     = 0;
+    bool                should_set_const_zero = false;
+    for (const auto& index_and_coeff : index2value_) {
+      auto        coeff = index_and_coeff.second;
+      const auto& index = index_and_coeff.first;
+      if ((index == index_type::Zero()).all()) {
+        if (coeff < abs_tolerance) {
+          should_set_const_zero = true;
+        }
+      }
+      if (std::abs(coeff) < abs_tolerance) {
+        removed_term_indexes.push_back(i);
+      }
+      ++i;
+    }
+    if (should_set_const_zero) {
+      index2value_[index_type::Zero()] = R(0.0);
+    }
+    for (auto removed_index : removed_term_indexes | std::views::reverse) {
+      index2value_.erase(std::next(index2value_.begin(), removed_index));
+    }
+  }
+
   R operator()(const coord_type& x) const {
     auto sum = R(0.0);
     for (const auto& index_and_coeff : index2value_) {
@@ -271,6 +299,7 @@ class MVPolynomial final {
     } else {
       (*this)[idx] = r;
     }
+    DeleteZeroCoeffTerm();
     return *this;
   }
 
@@ -282,6 +311,7 @@ class MVPolynomial final {
         (*this)[idx] = coeff;
       }
     }
+    DeleteZeroCoeffTerm();
     return *this;
   }
 
@@ -292,6 +322,7 @@ class MVPolynomial final {
     } else {
       (*this)[idx] = -r;
     }
+    DeleteZeroCoeffTerm();
     return *this;
   }
 
@@ -303,6 +334,7 @@ class MVPolynomial final {
         (*this)[idx] = -coeff;
       }
     }
+    DeleteZeroCoeffTerm();
     return *this;
   }
 
@@ -312,6 +344,7 @@ class MVPolynomial final {
       auto& coeff = index_and_coeff.second;
       coeff *= r;
     }
+    DeleteZeroCoeffTerm();
     return *this;
   }
 
@@ -333,6 +366,7 @@ class MVPolynomial final {
     } else {
       *this = *this * r;
     }
+    DeleteZeroCoeffTerm();
     return *this;
   }
 
@@ -351,8 +385,15 @@ class MVPolynomial final {
       if ((l_idx != r_idx).any()) {
         return false;
       }
-      if (std::abs(l_coeff - r_coeff) >= tolerance) {
-        return false;
+      auto abs_diff = std::abs(l_coeff - r_coeff);
+      if (abs_diff < 1) {
+        if (!(abs_diff < abs_tolerance)) {
+          return false;
+        }
+      } else {
+        if (!(abs_diff < rel_tolerance * std::max(std::abs(l_coeff), std::abs(r_coeff)))) {
+          return false;
+        }
       }
       ++l_it;
       ++r_it;
@@ -406,6 +447,8 @@ class MVPolynomial final {
       }
     }
 
+    mul.DeleteZeroCoeffTerm();
+
     return mul;
   }
 
@@ -420,10 +463,6 @@ class MVPolynomial final {
 
   IndexContainer index2value_;
 };
-
-template <std::signed_integral IntType, std::floating_point R, int Dim, class Allocator>
-R MVPolynomial<IntType, R, Dim, Allocator>::tolerance =
-    std::ldexp(std::numeric_limits<double>::epsilon(), std::numeric_limits<double>::min_exponent);
 
 template <std::signed_integral IntType, std::floating_point R, int Dim, class Allocator>
 auto D(const MVPolynomial<IntType, R, Dim, Allocator>& p, int axis) {
@@ -453,6 +492,8 @@ auto D(const MVPolynomial<IntType, R, Dim, Allocator>& p, int axis) {
       ++p_it;
     }
   }
+  dp.DeleteZeroCoeffTerm();
+
   return dp;
 }
 
@@ -473,6 +514,9 @@ auto Integrate(MVPolynomial<IntType, R, D, Allocator> p, int axis) {
       result[new_index] = new_value;
     }
   }
+
+  result.DeleteZeroCoeffTerm();
+
   return result;
 }
 
