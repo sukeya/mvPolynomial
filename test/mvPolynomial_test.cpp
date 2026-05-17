@@ -871,6 +871,55 @@ TEST_CASE("multiply", "[mvPolynomial]") {
     REQUIRE_FALSE(cancel_prod.contains(Eigen::Array2i({1, 0})));
     REQUIRE(cancel_prod.get(Eigen::Array2i({2, 0})) == -1);
   }
+
+  SECTION("binary scalar multiplication works on both sides") {
+    auto p        = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 2},
+        {{0, 1}, 3},
+    });
+    auto expected = MP2({
+        {{0, 0}, 3},
+        {{1, 0}, 6},
+        {{0, 1}, 9},
+    });
+
+    REQUIRE(p * 3.0 == expected);
+    REQUIRE(3.0 * p == expected);
+  }
+
+  SECTION("scalar division works and preserves canonical zero") {
+    auto p        = MP2({
+        {{0, 0}, 2},
+        {{1, 0}, 4},
+        {{0, 1}, 6},
+    });
+    auto expected = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 2},
+        {{0, 1}, 3},
+    });
+
+    auto inplace = p;
+    inplace /= 2.0;
+
+    REQUIRE(inplace == expected);
+    REQUIRE(p / 2.0 == expected);
+
+    auto zero = MP2();
+    zero /= 2.0;
+    REQUIRE(zero == MP2());
+  }
+
+  SECTION("scalar division by zero throws") {
+    auto p = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 2},
+    });
+
+    REQUIRE_THROWS_AS(p / 0.0, std::invalid_argument);
+    REQUIRE_THROWS_AS(p /= 0.0, std::invalid_argument);
+  }
 }
 
 TEST_CASE("sum", "[mvPolynomial]") {
@@ -900,6 +949,17 @@ TEST_CASE("sum", "[mvPolynomial]") {
   for (size_t i = 0; i < ans.size(); ++i) {
     REQUIRE(sum.get(ans[i].first) == ans[i].second);
   }
+
+  SECTION("binary scalar addition works on both sides") {
+    auto expected = MP2({
+        {{0, 0}, 4},
+        {{1, 0}, 2},
+        {{0, 1}, 3},
+    });
+
+    REQUIRE(l + 3.0 == expected);
+    REQUIRE(3.0 + l == expected);
+  }
 }
 
 TEST_CASE("sub", "[mvPolynomial]") {
@@ -926,5 +986,21 @@ TEST_CASE("sub", "[mvPolynomial]") {
   REQUIRE(sub.size() == ans.size());
   for (size_t i = 0; i < ans.size(); ++i) {
     REQUIRE(sub.get(ans[i].first) == ans[i].second);
+  }
+
+  SECTION("binary scalar subtraction works on both sides") {
+    auto poly_minus_scalar = MP2({
+        {{0, 0}, -2},
+        {{1, 0},  2},
+        {{0, 1},  3},
+    });
+    auto scalar_minus_poly = MP2({
+        {{0, 0},  2},
+        {{1, 0}, -2},
+        {{0, 1}, -3},
+    });
+
+    REQUIRE(l - 3.0 == poly_minus_scalar);
+    REQUIRE(3.0 - l == scalar_minus_poly);
   }
 }

@@ -392,6 +392,16 @@ class MVPolynomial final {
     return *this;
   }
 
+  MVPolynomial& operator/=(mapped_type r) {
+    CheckScalarDivisor(r);
+    for (auto& index_and_coeff : index2value_) {
+      auto& coeff = index_and_coeff.second;
+      coeff /= r;
+    }
+    Normalize();
+    return *this;
+  }
+
   MVPolynomial& operator*=(const MVPolynomial& r) {
     if (r.size() == 1) {
       const auto& [r_index, r_coeff] = *(r.begin());
@@ -452,6 +462,16 @@ class MVPolynomial final {
     return std::move(l);
   }
 
+  friend MVPolynomial operator+(MVPolynomial l, mapped_type r) {
+    l += r;
+    return l;
+  }
+
+  friend MVPolynomial operator+(mapped_type l, MVPolynomial r) {
+    r += l;
+    return r;
+  }
+
   friend MVPolynomial operator+(const MVPolynomial& l, MVPolynomial&& r) { return std::move(r) + l; }
 
   friend MVPolynomial operator+(MVPolynomial&& l, MVPolynomial&& r) { return std::move(l) + r; }
@@ -463,6 +483,17 @@ class MVPolynomial final {
   friend MVPolynomial operator-(MVPolynomial&& l, const MVPolynomial& r) {
     l -= r;
     return std::move(l);
+  }
+
+  friend MVPolynomial operator-(MVPolynomial l, mapped_type r) {
+    l -= r;
+    return l;
+  }
+
+  friend MVPolynomial operator-(mapped_type l, const MVPolynomial& r) {
+    auto result = MVPolynomial(l, r.get_allocator());
+    result -= r;
+    return result;
   }
 
   friend MVPolynomial operator-(const MVPolynomial& l, MVPolynomial&& r) { return -std::move(r) + l; }
@@ -486,6 +517,21 @@ class MVPolynomial final {
     mul.Normalize();
 
     return mul;
+  }
+
+  friend MVPolynomial operator*(MVPolynomial l, mapped_type r) {
+    l *= r;
+    return l;
+  }
+
+  friend MVPolynomial operator*(mapped_type l, MVPolynomial r) {
+    r *= l;
+    return r;
+  }
+
+  friend MVPolynomial operator/(MVPolynomial l, mapped_type r) {
+    l /= r;
+    return l;
   }
 
  private:
@@ -548,6 +594,12 @@ class MVPolynomial final {
   void CheckSelfIndexes() const {
     for (const auto& index_and_coeff : index2value_) {
       CheckIndexIncludingNegative(index_and_coeff.first);
+    }
+  }
+
+  void CheckScalarDivisor(mapped_type divisor) const {
+    if (std::abs(divisor) < abs_tolerance) {
+      throw std::invalid_argument("Division by zero scalar not supported!");
     }
   }
 
