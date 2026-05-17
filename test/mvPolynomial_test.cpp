@@ -1,13 +1,50 @@
 #include "mvPolynomial/mvPolynomial.hpp"
 
 #include <cstddef>
+#include <memory>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
 using MP2 = mvPolynomial::MVPolynomial<int, double, 2>;
 using MP3 = mvPolynomial::MVPolynomial<int, double, 3>;
+
+template <typename T>
+class CountingAllocator {
+ public:
+  using value_type = T;
+
+  CountingAllocator() : allocations_(std::make_shared<std::size_t>(0)) {}
+
+  explicit CountingAllocator(std::shared_ptr<std::size_t> allocations) : allocations_(std::move(allocations)) {}
+
+  template <typename U>
+  CountingAllocator(const CountingAllocator<U>& other) : allocations_(other.allocations_) {}
+
+  [[nodiscard]] T* allocate(std::size_t n) {
+    *allocations_ += n;
+    return std::allocator<T>{}.allocate(n);
+  }
+
+  void deallocate(T* p, std::size_t n) noexcept { std::allocator<T>{}.deallocate(p, n); }
+
+  template <typename U>
+  bool operator==(const CountingAllocator<U>& other) const noexcept {
+    return allocations_ == other.allocations_;
+  }
+
+  template <typename U>
+  bool operator!=(const CountingAllocator<U>& other) const noexcept {
+    return !(*this == other);
+  }
+
+  std::shared_ptr<std::size_t> allocations_;
+};
+
+using CountingPairAllocator = CountingAllocator<std::pair<const Eigen::Array2i, double>>;
+using CountingMP2           = mvPolynomial::MVPolynomial<int, double, 2, CountingPairAllocator>;
 
 TEST_CASE("constructor", "[mvPolynomial]") {
   SECTION("default") {
@@ -184,6 +221,61 @@ TEST_CASE("pow", "[mvPolynomial]") {
   SECTION("7") { REQUIRE(m.pow(7) == m3 * m3 * m); }
 
   SECTION("15") { REQUIRE(m.pow(15) == m3 * m3 * m3 * m3 * m3); }
+}
+
+TEST_CASE("allocator propagation", "[mvPolynomial]") {
+  auto allocations = std::make_shared<std::size_t>(0);
+  auto alloc       = CountingPairAllocator(allocations);
+  auto p           = CountingMP2(
+      {
+          {{0, 0}, 1},
+          {{1, 0}, 2},
+          {{0, 1}, 3},
+  },
+      alloc
+  );
+
+  SECTION("pow uses rebound allocator") {
+    const auto before = *allocations;
+    auto       p7     = p.pow(7);
+
+    REQUIRE(*allocations > before);
+    REQUIRE(p7 == p.pow(7));
+  }
+
+  SECTION("point evaluation uses rebound allocator") {
+    const auto before = *allocations;
+    auto       value  = p(Eigen::Vector2d({2, 3}));
+
+    REQUIRE(*allocations > before);
+    REQUIRE(value == 14);
+  }
+
+  SECTION("polynomial composition uses rebound allocator") {
+    auto x = CountingMP2(
+        {
+            {{0, 0}, 1},
+            {{1, 0}, 2},
+            {{0, 1}, 3},
+    },
+        alloc
+    );
+
+    const auto before   = *allocations;
+    auto       composed = p(x, 1);
+
+    REQUIRE(*allocations > before);
+    REQUIRE(
+        composed == CountingMP2(
+                        {
+                            {{0, 0}, 4},
+                            {{1, 0}, 8},
+                            {{0, 1}, 9},
+    },
+                        alloc
+                    )
+    );
+  }
 }
 
 TEST_CASE("operator()", "[mvPolynomial]") {

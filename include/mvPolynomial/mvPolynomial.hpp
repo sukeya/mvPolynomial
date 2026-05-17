@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <memory>
 #include <numeric>
 #include <ranges>
 #include <stdexcept>
@@ -75,6 +76,14 @@ class MVPolynomial final {
   using reverse_iterator       = IndexContainer::reverse_iterator;
   using const_reverse_iterator = IndexContainer::const_reverse_iterator;
 
+ private:
+  template <typename T>
+  using rebound_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<T>;
+
+  template <typename T>
+  using rebound_vector_type = std::vector<T, rebound_allocator_type<T>>;
+
+ public:
   MVPolynomial(const MVPolynomial& other)            = default;
   MVPolynomial& operator=(const MVPolynomial& other) = default;
   MVPolynomial(MVPolynomial&& other)                 = default;
@@ -187,10 +196,11 @@ class MVPolynomial final {
       default:
         auto max_pow2_under_exp = std::bit_floor(static_cast<unsigned int>(exp));
         auto max_bit_width      = std::bit_width(max_pow2_under_exp);
-        auto cache              = std::vector<MVPolynomial>(max_bit_width - 1);
-        cache.at(0)             = (*this) * (*this);
+        auto cache = rebound_vector_type<MVPolynomial>(rebound_allocator_type<MVPolynomial>(get_allocator()));
+        cache.reserve(max_bit_width - 1);
+        cache.push_back((*this) * (*this));
         for (int i = 2; i < max_bit_width; ++i) {
-          cache.at(i - 1) = cache.at(i - 2) * cache.at(i - 2);
+          cache.push_back(cache.at(i - 2) * cache.at(i - 2));
         }
 
         assert(!cache.empty());
@@ -210,7 +220,7 @@ class MVPolynomial final {
   }
 
   void DeleteZeroCoeffTerm() {
-    auto removed_term_indexes = std::vector<size_t>{};
+    auto removed_term_indexes = rebound_vector_type<size_type>(rebound_allocator_type<size_type>(get_allocator()));
     for (size_t i = 0; const auto& index_and_coeff : index2value_) {
       if (std::abs(index_and_coeff.second) < abs_tolerance) {
         removed_term_indexes.push_back(i);
@@ -226,7 +236,7 @@ class MVPolynomial final {
   }
 
   R operator()(const coord_type& x) const {
-    auto partial_sums = std::vector<R>{};
+    auto partial_sums = rebound_vector_type<R>(rebound_allocator_type<R>(get_allocator()));
     auto partial_sum  = rbegin()->second;
     for (auto it = rbegin(); it != std::prev(rend()); ++it) {
       const auto& index = it->first;
@@ -254,7 +264,7 @@ class MVPolynomial final {
   MVPolynomial operator()(const MVPolynomial& mvp, int axis) const {
     details::CheckAxis(dim, axis);
 
-    auto partial_sums = std::vector<MVPolynomial>{};
+    auto partial_sums = rebound_vector_type<MVPolynomial>(rebound_allocator_type<MVPolynomial>(get_allocator()));
     auto partial_sum  = MVPolynomial{rbegin()->second, get_allocator()};
     for (auto it = rbegin(); it != std::prev(rend()); ++it) {
       const auto& index = it->first;
