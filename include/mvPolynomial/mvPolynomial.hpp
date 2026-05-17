@@ -124,16 +124,10 @@ class MVPolynomial final {
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
   key_compare    key_comp() const noexcept { return index2value_.key_comp(); }
 
-  iterator       begin() noexcept { return index2value_.begin(); }
   const_iterator begin() const noexcept { return index2value_.begin(); }
-
-  iterator       end() noexcept { return index2value_.end(); }
   const_iterator end() const noexcept { return index2value_.end(); }
 
-  reverse_iterator       rbegin() noexcept { return index2value_.rbegin(); }
   const_reverse_iterator rbegin() const noexcept { return index2value_.rbegin(); }
-
-  reverse_iterator       rend() noexcept { return index2value_.rend(); }
   const_reverse_iterator rend() const noexcept { return index2value_.rend(); }
 
   const_iterator cbegin() const noexcept { return index2value_.cbegin(); }
@@ -156,12 +150,7 @@ class MVPolynomial final {
 
   void swap(MVPolynomial& m) { index2value_.swap(m.index2value_); }
 
-  iterator       find(const key_type& i) { return index2value_.find(i); }
   const_iterator find(const key_type& i) const { return index2value_.find(i); }
-  template <typename K>
-  iterator find(const K& i) {
-    return index2value_.find(i);
-  }
   template <typename K>
   const_iterator find(const K& i) const {
     return index2value_.find(i);
@@ -173,23 +162,13 @@ class MVPolynomial final {
     return index2value_.contains(i);
   }
 
-  iterator       lower_bound(const key_type& i) { return index2value_.lower_bound(i); }
   const_iterator lower_bound(const key_type& i) const { return index2value_.lower_bound(i); }
-  template <typename K>
-  iterator lower_bound(const K& i) {
-    return index2value_.lower_bound(i);
-  }
   template <typename K>
   const_iterator lower_bound(const K& i) const {
     return index2value_.lower_bound(i);
   }
 
-  iterator       upper_bound(const key_type& i) { return index2value_.upper_bound(i); }
   const_iterator upper_bound(const key_type& i) const { return index2value_.upper_bound(i); }
-  template <typename K>
-  iterator upper_bound(const K& i) {
-    return index2value_.upper_bound(i);
-  }
   template <typename K>
   const_iterator upper_bound(const K& i) const {
     return index2value_.upper_bound(i);
@@ -316,7 +295,7 @@ class MVPolynomial final {
 
   MVPolynomial operator-() const& {
     auto m = MVPolynomial(*this, get_allocator());
-    for (auto& i_and_v : m) {
+    for (auto& i_and_v : m.index2value_) {
       auto& [_, v] = i_and_v;
       v            = -v;
     }
@@ -324,7 +303,7 @@ class MVPolynomial final {
   }
 
   MVPolynomial operator-() && {
-    for (auto& i_and_v : *this) {
+    for (auto& i_and_v : index2value_) {
       auto& [_, v] = i_and_v;
       v            = -v;
     }
@@ -378,7 +357,7 @@ class MVPolynomial final {
   }
 
   MVPolynomial& operator*=(mapped_type r) {
-    for (auto& index_and_coeff : *this) {
+    for (auto& index_and_coeff : index2value_) {
       auto& coeff = index_and_coeff.second;
       coeff *= r;
     }
