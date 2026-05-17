@@ -247,8 +247,8 @@ class MVPolynomial final {
   }
 
   R operator()(const coord_type& x) const {
-    auto           partial_sum = rbegin()->second;
     std::vector<R> partial_sums;
+    auto           partial_sum = rbegin()->second;
     for (auto it = rbegin(); it != std::prev(rend()); ++it) {
       const auto& index = it->first;
 
@@ -265,7 +265,10 @@ class MVPolynomial final {
         partial_sum = next_coeff;
       }
     }
-    // Because partial_sum is constant, so
+    {
+      const auto& first_index = begin()->first;
+      partial_sum *= (x.array().pow(first_index.template cast<R>())).prod();
+    }
     return std::reduce(partial_sums.cbegin(), partial_sums.cend()) + partial_sum;
   }
 

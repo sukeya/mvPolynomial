@@ -152,6 +152,19 @@ TEST_CASE("operator()", "[mvPolynomial]") {
     REQUIRE(m(Eigen::Vector2d({2, 3})) == 112);
   }
 
+  SECTION("point without constant") {
+    auto m = MP2({
+        {{1, 0}, 2},
+        {{0, 1}, 3},
+        {{1, 1}, 4},
+        {{2, 0}, 5},
+        {{0, 2}, 6},
+    });
+
+    REQUIRE(m(Eigen::Vector2d::Zero()) == 0);
+    REQUIRE(m(Eigen::Vector2d({2, 3})) == 111);
+  }
+
   SECTION("mvpolynomial_1d") {
     auto m = MP3({
         {{0, 0, 0}, 1},
