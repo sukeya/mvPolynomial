@@ -78,8 +78,11 @@ auto q   = MP2({
 auto sum = p + q;
 auto sub = p - q;
 auto mul = p * q;
+auto div = p / 2.0;
 auto pw  = p.pow(3);
 ```
+
+`p /= scalar` and `p / scalar` are supported. Division by zero scalar throws `std::invalid_argument`.
 
 You can evaluate a polynomial at a point.
 
