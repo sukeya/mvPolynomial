@@ -40,6 +40,17 @@ TEST_CASE("constructor", "[mvPolynomial]") {
     }
   }
 
+  SECTION("empty range is canonical zero polynomial") {
+    auto empty = std::vector<std::pair<Eigen::Array2i, double>>{};
+    auto m     = MP2(empty.begin(), empty.end());
+
+    REQUIRE(m.size() == 1);
+    REQUIRE(m == MP2());
+    REQUIRE(m.contains(Eigen::Array2i::Zero()));
+    REQUIRE(m.get(Eigen::Array2i::Zero()) == 0);
+    REQUIRE(m(Eigen::Vector2d::Zero()) == 0);
+  }
+
   SECTION("initializer_list") {
     auto ans = std::vector<std::pair<Eigen::Array2i, double>>({
         {{0, 0}, 1},
@@ -63,6 +74,30 @@ TEST_CASE("constructor", "[mvPolynomial]") {
     for (size_t i = 0; i < ans.size(); ++i) {
       REQUIRE(m.get(ans[i].first) == ans[i].second);
     }
+  }
+
+  SECTION("empty initializer_list is canonical zero polynomial") {
+    auto m = MP2({});
+
+    REQUIRE(m.size() == 1);
+    REQUIRE(m == MP2());
+    REQUIRE(m.contains(Eigen::Array2i::Zero()));
+    REQUIRE(m.get(Eigen::Array2i::Zero()) == 0);
+    REQUIRE(m(Eigen::Vector2d({2, 3})) == 0);
+  }
+
+  SECTION("zero coefficient terms are normalized away at construction") {
+    auto m = MP2({
+        {{1, 0}, 0},
+        {{0, 1}, 0},
+        {{0, 0}, 0},
+    });
+
+    REQUIRE(m.size() == 1);
+    REQUIRE(m == MP2());
+    REQUIRE(m.contains(Eigen::Array2i::Zero()));
+    REQUIRE(m.get(Eigen::Array2i::Zero()) == 0);
+    REQUIRE(m(Eigen::Vector2d({2, 3})) == 0);
   }
 
   SECTION("negative index is rejected") {
@@ -112,6 +147,20 @@ TEST_CASE("invariants", "[mvPolynomial]") {
 
     REQUIRE_THROWS_AS(p.set(bad_key, 1.0), std::invalid_argument);
     REQUIRE_THROWS_AS(p.set(Eigen::Array2i({0, -1}), 2.0), std::invalid_argument);
+  }
+
+  SECTION("setting a coefficient to zero removes the term") {
+    auto p = MP2({
+        {{0, 0}, 1},
+        {{1, 0}, 2},
+    });
+
+    p.set(Eigen::Array2i({1, 0}), 0.0);
+
+    REQUIRE(p.size() == 1);
+    REQUIRE(p == MP2(1));
+    REQUIRE_FALSE(p.contains(Eigen::Array2i({1, 0})));
+    REQUIRE(p.get(Eigen::Array2i::Zero()) == 1);
   }
 }
 
