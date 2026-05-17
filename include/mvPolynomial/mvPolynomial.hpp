@@ -90,15 +90,18 @@ class MVPolynomial final {
   template <typename InputIterator>
   MVPolynomial(InputIterator s, InputIterator e) : index2value_(s, e, allocator_type{}) {
     CheckSelfIndexes();
+    DeleteZeroCoeffTerm();
   }
 
   template <typename InputIterator>
   MVPolynomial(InputIterator s, InputIterator e, const allocator_type& allocator) : index2value_(s, e, allocator) {
     CheckSelfIndexes();
+    DeleteZeroCoeffTerm();
   }
 
   MVPolynomial(std::initializer_list<value_type> l, const allocator_type& a = allocator_type{}) : index2value_(l, a) {
     CheckSelfIndexes();
+    DeleteZeroCoeffTerm();
   }
 
   MVPolynomial(const MVPolynomial& m, const allocator_type& a) : index2value_(m.index2value_, a) {}
@@ -109,11 +112,13 @@ class MVPolynomial final {
     index2value_.clear();
     index2value_.insert(l.begin(), l.end());
     CheckSelfIndexes();
+    DeleteZeroCoeffTerm();
     return *this;
   }
 
   MVPolynomial(mapped_type r, const allocator_type& a = allocator_type{}) : index2value_(a) {
     index2value_[index_type::Zero()] = r;
+    DeleteZeroCoeffTerm();
   }
 
   allocator_type get_allocator() const noexcept { return index2value_.get_allocator(); }
@@ -141,17 +146,13 @@ class MVPolynomial final {
   size_type max_size() const noexcept { return index2value_.max_size(); }
   size_type capacity() const noexcept { return index2value_.capacity(); }
 
-  mapped_type& operator[](const key_type& index) {
-    CheckIndexIncludingNegative(index);
-    return index2value_[index];
-  }
-  mapped_type& operator[](key_type&& index) {
-    CheckIndexIncludingNegative(index);
-    return index2value_[index];
-  }
+  const mapped_type& get(const key_type& index) const { return index2value_.at(index); }
 
-  mapped_type&       at(const key_type& i) { return index2value_.at(i); }
-  const mapped_type& at(const key_type& i) const { return index2value_.at(i); }
+  void set(const key_type& index, R coeff) {
+    CheckIndexIncludingNegative(index);
+    index2value_[index] = coeff;
+    DeleteZeroCoeffTerm();
+  }
 
   void swap(MVPolynomial& m) { index2value_.swap(m.index2value_); }
 
@@ -208,7 +209,7 @@ class MVPolynomial final {
       default:
         auto max_pow2_under_exp = std::bit_floor(static_cast<unsigned int>(exp));
         auto max_bit_width      = std::bit_width(max_pow2_under_exp);
-        auto cache              = std::vector<MVPolynomial>(max_bit_width - 1, get_allocator());
+        auto cache              = std::vector<MVPolynomial>(max_bit_width - 1);
         cache.at(0)             = (*this) * (*this);
         for (int i = 2; i < max_bit_width; ++i) {
           cache.at(i - 1) = cache.at(i - 2) * cache.at(i - 2);
@@ -231,7 +232,7 @@ class MVPolynomial final {
   }
 
   void DeleteZeroCoeffTerm() {
-    auto removed_term_indexes = std::vector<size_t>{get_allocator()};
+    auto removed_term_indexes = std::vector<size_t>{};
     for (size_t i = 0; const auto& index_and_coeff : index2value_) {
       if (std::abs(index_and_coeff.second) < abs_tolerance) {
         removed_term_indexes.push_back(i);
@@ -247,7 +248,7 @@ class MVPolynomial final {
   }
 
   R operator()(const coord_type& x) const {
-    auto partial_sums = std::vector<R>{get_allocator()};
+    auto partial_sums = std::vector<R>{};
     auto partial_sum  = rbegin()->second;
     for (auto it = rbegin(); it != std::prev(rend()); ++it) {
       const auto& index = it->first;
@@ -275,7 +276,7 @@ class MVPolynomial final {
   MVPolynomial operator()(const MVPolynomial& mvp, int axis) const {
     details::CheckAxis(dim, axis);
 
-    auto partial_sums = std::vector<MVPolynomial>{get_allocator()};
+    auto partial_sums = std::vector<MVPolynomial>{};
     auto partial_sum  = MVPolynomial{rbegin()->second, get_allocator()};
     for (auto it = rbegin(); it != std::prev(rend()); ++it) {
       const auto& index = it->first;
@@ -333,9 +334,9 @@ class MVPolynomial final {
   MVPolynomial& operator+=(mapped_type r) {
     auto idx = index_type::Zero();
     if (contains(idx)) {
-      (*this)[idx] += r;
+      index2value_[idx] += r;
     } else {
-      (*this)[idx] = r;
+      index2value_[idx] = r;
     }
     DeleteZeroCoeffTerm();
     return *this;
@@ -344,9 +345,9 @@ class MVPolynomial final {
   MVPolynomial& operator+=(const MVPolynomial& r) {
     for (const auto& [idx, coeff] : r) {
       if (contains(idx)) {
-        (*this)[idx] += coeff;
+        index2value_[idx] += coeff;
       } else {
-        (*this)[idx] = coeff;
+        index2value_[idx] = coeff;
       }
     }
     DeleteZeroCoeffTerm();
@@ -356,9 +357,9 @@ class MVPolynomial final {
   MVPolynomial& operator-=(mapped_type r) {
     auto idx = index_type::Zero();
     if (contains(idx)) {
-      (*this)[idx] -= r;
+      index2value_[idx] -= r;
     } else {
-      (*this)[idx] = -r;
+      index2value_[idx] = -r;
     }
     DeleteZeroCoeffTerm();
     return *this;
@@ -367,9 +368,9 @@ class MVPolynomial final {
   MVPolynomial& operator-=(const MVPolynomial& r) {
     for (const auto& [idx, coeff] : r) {
       if (contains(idx)) {
-        (*this)[idx] -= coeff;
+        index2value_[idx] -= coeff;
       } else {
-        (*this)[idx] = -coeff;
+        index2value_[idx] = -coeff;
       }
     }
     DeleteZeroCoeffTerm();
@@ -394,9 +395,9 @@ class MVPolynomial final {
         const auto new_index = index + r_index;
         const auto new_coeff = coeff * r_coeff;
         if (result.contains(new_index)) {
-          result[new_index] += new_coeff;
+          result.index2value_[new_index] += new_coeff;
         } else {
-          result[new_index] = new_coeff;
+          result.index2value_[new_index] = new_coeff;
         }
       }
       swap(result);
@@ -477,9 +478,9 @@ class MVPolynomial final {
         const auto idx           = l_idx + r_idx;
         const auto v             = l_v * r_v;
         if (mul.contains(idx)) {
-          mul[idx] += v;
+          mul.index2value_[idx] += v;
         } else {
-          mul[idx] = v;
+          mul.index2value_[idx] = v;
         }
       }
     }
@@ -529,7 +530,7 @@ auto D(const MVPolynomial<IntType, R, Dim, Allocator>& p, int axis) {
       p_it = d_end_it;
     } else {
       value *= index[axis]--;
-      dp[index] = value;
+      dp.set(index, value);
       ++p_it;
     }
   }
@@ -544,15 +545,15 @@ auto Integrate(MVPolynomial<IntType, R, D, Allocator> p, int axis) {
 
   details::CheckAxis(D, axis);
 
-  auto result = MP(std::initializer_list<typename MP::value_type>{}, p.get_allocator());
+  auto result = MP(p.get_allocator());
   for (const auto& [index, value] : p) {
     auto new_index = index;
     ++new_index[axis];
     const auto new_value = value / new_index[axis];
     if (result.contains(new_index)) {
-      result[new_index] += new_value;
+      result.set(new_index, result.get(new_index) + new_value);
     } else {
-      result[new_index] = new_value;
+      result.set(new_index, new_value);
     }
   }
 

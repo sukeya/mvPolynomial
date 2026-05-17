@@ -18,7 +18,7 @@ TEST_CASE("constructor", "[mvPolynomial]") {
 
     REQUIRE(m.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
-      REQUIRE(m[ans[i].first] == ans[i].second);
+      REQUIRE(m.get(ans[i].first) == ans[i].second);
     }
   }
 
@@ -36,7 +36,7 @@ TEST_CASE("constructor", "[mvPolynomial]") {
 
     REQUIRE(m.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
-      REQUIRE(m.at(ans[i].first) == ans[i].second);
+      REQUIRE(m.get(ans[i].first) == ans[i].second);
     }
   }
 
@@ -61,7 +61,7 @@ TEST_CASE("constructor", "[mvPolynomial]") {
 
     REQUIRE(m.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
-      REQUIRE(m.at(ans[i].first) == ans[i].second);
+      REQUIRE(m.get(ans[i].first) == ans[i].second);
     }
   }
 
@@ -88,7 +88,7 @@ TEST_CASE("invariants", "[mvPolynomial]") {
     REQUIRE(p.size() == 1);
     REQUIRE(p == MP2());
     REQUIRE(p.contains(Eigen::Array2i::Zero()));
-    REQUIRE(p.at(Eigen::Array2i::Zero()) == 0);
+    REQUIRE(p.get(Eigen::Array2i::Zero()) == 0);
   }
 
   SECTION("multiplying by zero stays canonical zero polynomial") {
@@ -103,15 +103,15 @@ TEST_CASE("invariants", "[mvPolynomial]") {
     REQUIRE(p.size() == 1);
     REQUIRE(p == MP2());
     REQUIRE(p.contains(Eigen::Array2i::Zero()));
-    REQUIRE(p.at(Eigen::Array2i::Zero()) == 0);
+    REQUIRE(p.get(Eigen::Array2i::Zero()) == 0);
   }
 
-  SECTION("operator[] rejects negative index for lvalue and rvalue keys") {
+  SECTION("set rejects negative index for lvalue and rvalue keys") {
     auto p       = MP2();
     auto bad_key = Eigen::Array2i({-1, 0});
 
-    REQUIRE_THROWS_AS(p[bad_key] = 1.0, std::invalid_argument);
-    REQUIRE_THROWS_AS(p[Eigen::Array2i({0, -1})] = 2.0, std::invalid_argument);
+    REQUIRE_THROWS_AS(p.set(bad_key, 1.0), std::invalid_argument);
+    REQUIRE_THROWS_AS(p.set(Eigen::Array2i({0, -1}), 2.0), std::invalid_argument);
   }
 }
 
@@ -278,7 +278,7 @@ TEST_CASE("D", "[mvPolynomial]") {
 
     REQUIRE(dm0.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
-      REQUIRE(dm0[ans[i].first] == ans[i].second);
+      REQUIRE(dm0.get(ans[i].first) == ans[i].second);
     }
   }
 
@@ -292,7 +292,7 @@ TEST_CASE("D", "[mvPolynomial]") {
 
     REQUIRE(dm1.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
-      REQUIRE(dm1[ans[i].first] == ans[i].second);
+      REQUIRE(dm1.get(ans[i].first) == ans[i].second);
     }
   }
 }
@@ -320,7 +320,7 @@ TEST_CASE("integral", "[mvPolynomial]") {
 
     REQUIRE(sm.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
-      REQUIRE(sm[ans[i].first] == ans[i].second);
+      REQUIRE(sm.get(ans[i].first) == ans[i].second);
     }
   }
 
@@ -337,7 +337,7 @@ TEST_CASE("integral", "[mvPolynomial]") {
 
     REQUIRE(sm.size() == ans.size());
     for (size_t i = 0; i < ans.size(); ++i) {
-      REQUIRE(sm[ans[i].first] == ans[i].second);
+      REQUIRE(sm.get(ans[i].first) == ans[i].second);
     }
   }
 
@@ -352,7 +352,7 @@ TEST_CASE("integral", "[mvPolynomial]") {
     REQUIRE(sc.find(Eigen::Array2i({0, 1})) != sc.end());
     REQUIRE(sc.lower_bound(Eigen::Array2i({0, 1})) != sc.end());
     REQUIRE((sc.lower_bound(Eigen::Array2i({0, 1}))->first == Eigen::Array2i({0, 1})).all());
-    REQUIRE(sc.at(Eigen::Array2i({0, 1})) == 9);
+    REQUIRE(sc.get(Eigen::Array2i({0, 1})) == 9);
   }
 
   SECTION("higher degree term keeps lookup behavior") {
@@ -366,7 +366,7 @@ TEST_CASE("integral", "[mvPolynomial]") {
     REQUIRE(shi.find(Eigen::Array2i({4, 2})) != shi.end());
     REQUIRE(shi.lower_bound(Eigen::Array2i({4, 2})) != shi.end());
     REQUIRE((shi.lower_bound(Eigen::Array2i({4, 2}))->first == Eigen::Array2i({4, 2})).all());
-    REQUIRE(shi.at(Eigen::Array2i({4, 2})) == 2);
+    REQUIRE(shi.get(Eigen::Array2i({4, 2})) == 2);
   }
 }
 
@@ -399,7 +399,7 @@ TEST_CASE("multiply", "[mvPolynomial]") {
 
   REQUIRE(prod.size() == ans.size());
   for (size_t i = 0; i < ans.size(); ++i) {
-    REQUIRE(prod[ans[i].first] == ans[i].second);
+    REQUIRE(prod.get(ans[i].first) == ans[i].second);
   }
 
   SECTION("multiply assign by monomial matches binary multiply") {
@@ -452,7 +452,7 @@ TEST_CASE("sum", "[mvPolynomial]") {
 
   REQUIRE(sum.size() == ans.size());
   for (size_t i = 0; i < ans.size(); ++i) {
-    REQUIRE(sum[ans[i].first] == ans[i].second);
+    REQUIRE(sum.get(ans[i].first) == ans[i].second);
   }
 }
 
@@ -479,6 +479,6 @@ TEST_CASE("sub", "[mvPolynomial]") {
 
   REQUIRE(sub.size() == ans.size());
   for (size_t i = 0; i < ans.size(); ++i) {
-    REQUIRE(sub[ans[i].first] == ans[i].second);
+    REQUIRE(sub.get(ans[i].first) == ans[i].second);
   }
 }
