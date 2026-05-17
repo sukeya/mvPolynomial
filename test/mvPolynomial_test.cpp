@@ -1,7 +1,10 @@
 #include "mvPolynomial/mvPolynomial.hpp"
 
+#include <cmath>
 #include <cstddef>
 #include <memory>
+#include <random>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -10,6 +13,119 @@
 
 using MP2 = mvPolynomial::MVPolynomial<int, double, 2>;
 using MP3 = mvPolynomial::MVPolynomial<int, double, 3>;
+
+template <typename Poly>
+typename Poly::mapped_type NaivePointEval(const Poly& p, const typename Poly::coord_type& x) {
+  auto sum = typename Poly::mapped_type{0};
+  for (const auto& [index, coeff] : p) {
+    auto term = coeff;
+    for (int axis = 0; axis < Poly::dim; ++axis) {
+      term *= std::pow(x[axis], index[axis]);
+    }
+    sum += term;
+  }
+  return sum;
+}
+
+template <typename Poly>
+Poly NaiveCompose(const Poly& p, const Poly& mvp, int axis) {
+  auto composed = Poly(p.get_allocator());
+  for (const auto& [index, coeff] : p) {
+    auto index_without_axis  = index;
+    index_without_axis[axis] = 0;
+    composed += Poly(
+                    {
+                        {index_without_axis, coeff}
+    },
+                    p.get_allocator()
+                ) *
+                mvp.pow(index[axis]);
+  }
+  return composed;
+}
+
+template <typename Poly, typename URNG>
+Poly MakeRandomPolynomial(URNG& rng, int term_count, int max_degree, int max_abs_coeff) {
+  auto poly = Poly();
+
+  auto degree_dist = std::uniform_int_distribution<int>(0, max_degree);
+  auto coeff_dist  = std::uniform_int_distribution<int>(-max_abs_coeff, max_abs_coeff);
+  for (int term = 0; term < term_count; ++term) {
+    typename Poly::index_type index;
+    index.setZero();
+    for (int axis = 0; axis < Poly::dim; ++axis) {
+      index(axis) = degree_dist(rng);
+    }
+
+    auto coeff = coeff_dist(rng);
+    if (coeff == 0) {
+      continue;
+    }
+
+    if (poly.contains(index)) {
+      poly.set(index, poly.get(index) + coeff);
+    } else {
+      poly.set(index, coeff);
+    }
+  }
+
+  if (poly == Poly()) {
+    typename Poly::index_type index;
+    index.setZero();
+    index(0) = 1;
+    poly.set(index, 1);
+  }
+
+  return poly;
+}
+
+template <typename Poly, typename URNG>
+typename Poly::coord_type MakeRandomPoint(URNG& rng, int min_coord, int max_coord) {
+  typename Poly::coord_type point;
+  point.setZero();
+  auto coord_dist = std::uniform_int_distribution<int>(min_coord, max_coord);
+  for (int axis = 0; axis < Poly::dim; ++axis) {
+    point(axis) = static_cast<typename Poly::mapped_type>(coord_dist(rng));
+  }
+  return point;
+}
+
+template <typename Poly>
+std::string DescribePolynomial(const Poly& p) {
+  auto oss   = std::ostringstream{};
+  auto first = true;
+  oss << "{";
+  for (const auto& [index, coeff] : p) {
+    if (!first) {
+      oss << ", ";
+    }
+    first = false;
+    oss << "[";
+    for (int axis = 0; axis < Poly::dim; ++axis) {
+      if (axis > 0) {
+        oss << ",";
+      }
+      oss << index[axis];
+    }
+    oss << "]=" << coeff;
+  }
+  oss << "}";
+  return oss.str();
+}
+
+template <typename Poly>
+std::string DescribePoint(const typename Poly::coord_type& point) {
+  auto oss = std::ostringstream{};
+  oss << "[";
+  for (int axis = 0; axis < Poly::dim; ++axis) {
+    if (axis > 0) {
+      oss << ",";
+    }
+    oss << point[axis];
+  }
+  oss << "]";
+  return oss.str();
+}
 
 template <typename T>
 class CountingAllocator {
@@ -396,6 +512,46 @@ TEST_CASE("operator()", "[mvPolynomial]") {
                        {{0, 0, 2}, 52},
     })
     );
+  }
+
+  SECTION("point_randomized_matches_naive_sum") {
+    auto rng             = std::mt19937(20260517);
+    auto term_count_dist = std::uniform_int_distribution<int>(1, 12);
+
+    for (int trial = 0; trial < 200; ++trial) {
+      auto m        = MakeRandomPolynomial<MP3>(rng, term_count_dist(rng), 4, 5);
+      auto x        = MakeRandomPoint<MP3>(rng, -3, 3);
+      auto actual   = m(x);
+      auto expected = NaivePointEval(m, x);
+
+      CAPTURE(trial, DescribePolynomial(m), DescribePoint<MP3>(x));
+      REQUIRE(actual == expected);
+    }
+  }
+
+  SECTION("composition_randomized_matches_naive_sum") {
+    auto rng                   = std::mt19937(20260518);
+    auto outer_term_count_dist = std::uniform_int_distribution<int>(1, 10);
+    auto inner_term_count_dist = std::uniform_int_distribution<int>(1, 6);
+    auto axis_dist             = std::uniform_int_distribution<int>(0, MP3::dim - 1);
+
+    for (int trial = 0; trial < 120; ++trial) {
+      auto outer    = MakeRandomPolynomial<MP3>(rng, outer_term_count_dist(rng), 3, 4);
+      auto inner    = MakeRandomPolynomial<MP3>(rng, inner_term_count_dist(rng), 2, 3);
+      auto axis     = axis_dist(rng);
+      auto actual   = outer(inner, axis);
+      auto expected = NaiveCompose(outer, inner, axis);
+
+      CAPTURE(
+          trial,
+          axis,
+          DescribePolynomial(outer),
+          DescribePolynomial(inner),
+          DescribePolynomial(actual),
+          DescribePolynomial(expected)
+      );
+      REQUIRE(actual == expected);
+    }
   }
 }
 
