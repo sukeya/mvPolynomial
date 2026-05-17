@@ -81,10 +81,10 @@ class MVPolynomial final {
   MVPolynomial& operator=(MVPolynomial&& other)      = default;
   ~MVPolynomial()                                    = default;
 
-  MVPolynomial() : index2value_(allocator_type{}) { index2value_[index_type::Zero()] = R{0}; }
+  MVPolynomial() : index2value_(allocator_type{}) { AssignCoeffWithoutNormalization(index_type::Zero(), R{0}); }
 
   explicit MVPolynomial(const allocator_type& allocator) : index2value_(allocator) {
-    index2value_[index_type::Zero()] = R{0};
+    AssignCoeffWithoutNormalization(index_type::Zero(), R{0});
   }
 
   template <typename InputIterator>
@@ -117,7 +117,7 @@ class MVPolynomial final {
   }
 
   MVPolynomial(mapped_type r, const allocator_type& a = allocator_type{}) : index2value_(a) {
-    index2value_[index_type::Zero()] = r;
+    AssignCoeffWithoutNormalization(index_type::Zero(), r);
     DeleteZeroCoeffTerm();
   }
 
@@ -143,8 +143,7 @@ class MVPolynomial final {
   const mapped_type& get(const key_type& index) const { return index2value_.at(index); }
 
   void set(const key_type& index, R coeff) {
-    CheckIndexIncludingNegative(index);
-    index2value_[index] = coeff;
+    AssignCoeffWithoutNormalization(index, coeff);
     DeleteZeroCoeffTerm();
   }
 
@@ -222,7 +221,7 @@ class MVPolynomial final {
       index2value_.erase(std::next(index2value_.begin(), removed_index));
     }
     if (index2value_.empty()) {
-      index2value_[index_type::Zero()] = R{0.0};
+      AssignCoeffWithoutNormalization(index_type::Zero(), R{0});
     }
   }
 
@@ -311,46 +310,28 @@ class MVPolynomial final {
   }
 
   MVPolynomial& operator+=(mapped_type r) {
-    auto idx = index_type::Zero();
-    if (contains(idx)) {
-      index2value_[idx] += r;
-    } else {
-      index2value_[idx] = r;
-    }
+    AddCoeffWithoutNormalization(index_type::Zero(), r);
     DeleteZeroCoeffTerm();
     return *this;
   }
 
   MVPolynomial& operator+=(const MVPolynomial& r) {
     for (const auto& [idx, coeff] : r) {
-      if (contains(idx)) {
-        index2value_[idx] += coeff;
-      } else {
-        index2value_[idx] = coeff;
-      }
+      AddCoeffWithoutNormalization(idx, coeff);
     }
     DeleteZeroCoeffTerm();
     return *this;
   }
 
   MVPolynomial& operator-=(mapped_type r) {
-    auto idx = index_type::Zero();
-    if (contains(idx)) {
-      index2value_[idx] -= r;
-    } else {
-      index2value_[idx] = -r;
-    }
+    AddCoeffWithoutNormalization(index_type::Zero(), -r);
     DeleteZeroCoeffTerm();
     return *this;
   }
 
   MVPolynomial& operator-=(const MVPolynomial& r) {
     for (const auto& [idx, coeff] : r) {
-      if (contains(idx)) {
-        index2value_[idx] -= coeff;
-      } else {
-        index2value_[idx] = -coeff;
-      }
+      AddCoeffWithoutNormalization(idx, -coeff);
     }
     DeleteZeroCoeffTerm();
     return *this;
@@ -373,11 +354,7 @@ class MVPolynomial final {
       for (const auto& [index, coeff] : *this) {
         const auto new_index = index + r_index;
         const auto new_coeff = coeff * r_coeff;
-        if (result.contains(new_index)) {
-          result.index2value_[new_index] += new_coeff;
-        } else {
-          result.index2value_[new_index] = new_coeff;
-        }
+        result.AddCoeffWithoutNormalization(new_index, new_coeff);
       }
       swap(result);
     } else {
@@ -456,11 +433,7 @@ class MVPolynomial final {
         const auto& [r_idx, r_v] = r_p;
         const auto idx           = l_idx + r_idx;
         const auto v             = l_v * r_v;
-        if (mul.contains(idx)) {
-          mul.index2value_[idx] += v;
-        } else {
-          mul.index2value_[idx] = v;
-        }
+        mul.AddCoeffWithoutNormalization(idx, v);
       }
     }
 
@@ -470,6 +443,20 @@ class MVPolynomial final {
   }
 
  private:
+  void AssignCoeffWithoutNormalization(const key_type& index, mapped_type coeff) {
+    CheckIndexIncludingNegative(index);
+    index2value_[index] = coeff;
+  }
+
+  void AddCoeffWithoutNormalization(const key_type& index, mapped_type delta) {
+    CheckIndexIncludingNegative(index);
+    if (auto it = index2value_.find(index); it != index2value_.end()) {
+      it->second += delta;
+    } else {
+      index2value_[index] = delta;
+    }
+  }
+
   void CheckIndexIncludingNegative(const index_type& index) const {
     if ((index < 0).any()) {
       throw std::invalid_argument("Negative index not supported!");
