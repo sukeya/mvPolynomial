@@ -81,14 +81,14 @@ class MVPolynomial final {
   MVPolynomial& operator=(MVPolynomial&& other)      = default;
   ~MVPolynomial()                                    = default;
 
-  MVPolynomial() : index2value_() { index2value_[index_type::Zero()] = R{0}; }
+  MVPolynomial() : index2value_(allocator_type{}) { index2value_[index_type::Zero()] = R{0}; }
 
   explicit MVPolynomial(const allocator_type& allocator) : index2value_(allocator) {
     index2value_[index_type::Zero()] = R{0};
   }
 
   template <typename InputIterator>
-  MVPolynomial(InputIterator s, InputIterator e) : index2value_(s, e) {
+  MVPolynomial(InputIterator s, InputIterator e) : index2value_(s, e, allocator_type{}) {
     CheckSelfIndexes();
   }
 
@@ -231,7 +231,7 @@ class MVPolynomial final {
   }
 
   void DeleteZeroCoeffTerm() {
-    std::vector<size_t> removed_term_indexes;
+    auto removed_term_indexes = std::vector<size_t>{get_allocator()};
     for (size_t i = 0; const auto& index_and_coeff : index2value_) {
       if (std::abs(index_and_coeff.second) < abs_tolerance) {
         removed_term_indexes.push_back(i);
@@ -247,8 +247,8 @@ class MVPolynomial final {
   }
 
   R operator()(const coord_type& x) const {
-    std::vector<R> partial_sums;
-    auto           partial_sum = rbegin()->second;
+    auto partial_sums = std::vector<R>{get_allocator()};
+    auto partial_sum  = rbegin()->second;
     for (auto it = rbegin(); it != std::prev(rend()); ++it) {
       const auto& index = it->first;
 
