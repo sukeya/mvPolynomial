@@ -560,7 +560,7 @@ auto D(const MVPolynomial<IntType, R, dim, Allocator>& p, int axis) {
 }
 
 template <std::signed_integral IntType, std::floating_point R, int dim, class Allocator>
-auto Integrate(MVPolynomial<IntType, R, dim, Allocator> p, int axis) {
+auto Integrate(const MVPolynomial<IntType, R, dim, Allocator>& p, int axis) {
   return p.Integrate(axis);
 }
 
