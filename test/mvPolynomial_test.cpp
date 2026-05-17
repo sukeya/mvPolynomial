@@ -15,6 +15,12 @@ using MP2 = mvPolynomial::MVPolynomial<int, double, 2>;
 using MP3 = mvPolynomial::MVPolynomial<int, double, 3>;
 
 template <typename Poly>
+bool IsCanonicalZeroPolynomial(const Poly& p) {
+  auto zero_index = Poly::index_type::Zero();
+  return p.size() == 1 && p.contains(zero_index) && p.get(zero_index) == typename Poly::mapped_type{0};
+}
+
+template <typename Poly>
 typename Poly::mapped_type NaivePointEval(const Poly& p, const typename Poly::coord_type& x) {
   auto sum = typename Poly::mapped_type{0};
   for (const auto& [index, coeff] : p) {
@@ -46,7 +52,7 @@ Poly NaiveCompose(const Poly& p, const Poly& mvp, int axis) {
 
 template <typename Poly, typename URNG>
 Poly MakeRandomPolynomial(URNG& rng, int term_count, int max_degree, int max_abs_coeff) {
-  auto poly = Poly();
+  auto terms = std::vector<std::pair<typename Poly::index_type, typename Poly::mapped_type>>{};
 
   auto degree_dist = std::uniform_int_distribution<int>(0, max_degree);
   auto coeff_dist  = std::uniform_int_distribution<int>(-max_abs_coeff, max_abs_coeff);
@@ -62,21 +68,44 @@ Poly MakeRandomPolynomial(URNG& rng, int term_count, int max_degree, int max_abs
       continue;
     }
 
-    if (poly.contains(index)) {
-      poly.set(index, poly.get(index) + coeff);
-    } else {
-      poly.set(index, coeff);
+    auto found = false;
+    for (auto& [existing_index, existing_coeff] : terms) {
+      if ((existing_index == index).all()) {
+        existing_coeff += static_cast<typename Poly::mapped_type>(coeff);
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      terms.emplace_back(index, static_cast<typename Poly::mapped_type>(coeff));
     }
   }
 
-  if (poly == Poly()) {
-    typename Poly::index_type index;
-    index.setZero();
-    index(0) = 1;
-    poly.set(index, 1);
+  auto filtered_terms = std::vector<std::pair<typename Poly::index_type, typename Poly::mapped_type>>{};
+  filtered_terms.reserve(terms.size());
+  for (const auto& [index, coeff] : terms) {
+    if (coeff != typename Poly::mapped_type{0}) {
+      filtered_terms.emplace_back(index, coeff);
+    }
   }
 
-  return poly;
+  if (filtered_terms.empty()) {
+    typename Poly::index_type index;
+    index.setZero();
+    for (int axis = 0; axis < Poly::dim; ++axis) {
+      index(axis) = degree_dist(rng);
+    }
+
+    auto coeff = 0;
+    do {
+      coeff = coeff_dist(rng);
+    } while (coeff == 0);
+
+    filtered_terms.emplace_back(index, static_cast<typename Poly::mapped_type>(coeff));
+  }
+
+  return Poly(filtered_terms.begin(), filtered_terms.end());
 }
 
 template <typename Poly, typename URNG>
@@ -378,6 +407,20 @@ TEST_CASE("pow", "[mvPolynomial]") {
   SECTION("7") { REQUIRE(m.pow(7) == m3 * m3 * m); }
 
   SECTION("15") { REQUIRE(m.pow(15) == m3 * m3 * m3 * m3 * m3); }
+}
+
+TEST_CASE("random polynomial helper", "[mvPolynomial]") {
+  SECTION("never returns canonical zero polynomial") {
+    auto rng             = std::mt19937(20260519);
+    auto term_count_dist = std::uniform_int_distribution<int>(1, 12);
+
+    for (int trial = 0; trial < 200; ++trial) {
+      auto p = MakeRandomPolynomial<MP3>(rng, term_count_dist(rng), 4, 5);
+
+      CAPTURE(trial, DescribePolynomial(p));
+      REQUIRE_FALSE(IsCanonicalZeroPolynomial(p));
+    }
+  }
 }
 
 TEST_CASE("allocator propagation", "[mvPolynomial]") {

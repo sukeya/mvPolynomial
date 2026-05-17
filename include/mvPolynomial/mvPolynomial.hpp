@@ -505,14 +505,23 @@ class MVPolynomial final {
     }
   }
 
+  void NormalizeSingle(const key_type& index) {
+    if (std::abs(get(index)) < abs_tolerance) {
+      index2value_.erase(index);
+    }
+    if (index2value_.empty()) {
+      AssignCoeffRaw(index_type::Zero(), R{0});
+    }
+  }
+
   void AssignCoeff(const key_type& index, mapped_type coeff) {
     AssignCoeffRaw(index, coeff);
-    Normalize();
+    NormalizeSingle(index);
   }
 
   void AddCoeff(const key_type& index, mapped_type delta) {
     AddCoeffRaw(index, delta);
-    Normalize();
+    NormalizeSingle(index);
   }
 
   void AssignCoeffRaw(const key_type& index, mapped_type coeff) {
