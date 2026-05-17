@@ -57,6 +57,15 @@ double c = p.get(Eigen::Array2i::Zero());
 p.set(Eigen::Array2i({2, 0}), 5.0);
 ```
 
+If you want to read a term that may be absent, use `try_get`.
+
+```cpp
+auto maybe_xy = p.try_get(Eigen::Array2i({1, 1}));
+if (maybe_xy.has_value()) {
+  double coeff = *maybe_xy;
+}
+```
+
 `set(index, 0.0)` removes the term, and zero-coefficient terms are normalized away automatically.
 
 The class provides basic polynomial arithmetic.
@@ -88,9 +97,12 @@ auto x = MP2({
 auto composed = p(x, 1);
 ```
 
-Differentiation and integration are free functions.
+Differentiation and integration are available both as member functions and as free functions.
 
 ```cpp
+auto dx_member = p.D(0);
+auto iy_member = p.Integrate(1);
+
 auto dx = mvPolynomial::D(p, 0);
 auto iy = mvPolynomial::Integrate(p, 1);
 ```
