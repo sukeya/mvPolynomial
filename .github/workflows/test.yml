@@ -33,7 +33,9 @@ jobs:
           cd ./build/debug/clang && ninja
       - name: Run tests
         run: |
-          ./build/debug/clang/test/mvPolynomial_test
+          # libc++ exception internals can trip ASan's alloc/dealloc mismatch check
+          # on Ubuntu runners even when the library code itself is fine.
+          ASAN_OPTIONS=alloc_dealloc_mismatch=0 ./build/debug/clang/test/mvPolynomial_test
 
   clang_memory:
     # libstdc++ and libc++ have uninitialized variables,
