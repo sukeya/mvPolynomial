@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <numeric>
 #include <ranges>
 #include <stdexcept>
 #include <type_traits>
@@ -246,13 +247,26 @@ class MVPolynomial final {
   }
 
   R operator()(const coord_type& x) const {
-    auto sum = R(0.0);
-    for (const auto& index_and_coeff : index2value_) {
-      auto        coeff = index_and_coeff.second;
-      const auto& index = index_and_coeff.first;
-      sum += coeff * (x.array().pow(index.template cast<double>())).prod();
+    auto           partial_sum = rbegin()->second;
+    std::vector<R> partial_sums;
+    for (auto it = rbegin(); it != std::prev(rend()); ++it) {
+      const auto& index = it->first;
+
+      auto        next_it    = std::next(it);
+      auto        next_coeff = next_it->second;
+      const auto& next_index = next_it->first;
+
+      index_type index_diff = index - next_index;
+      if ((index_diff > 0).all()) {
+        partial_sum = next_coeff + partial_sum * (x.array().pow(index_diff.template cast<R>())).prod();
+      } else {
+        partial_sum *= (x.array().pow(index.template cast<R>())).prod();
+        partial_sums.push_back(partial_sum);
+        partial_sum = next_coeff;
+      }
     }
-    return sum;
+    // Because partial_sum is constant, so
+    return std::reduce(partial_sums.cbegin(), partial_sums.cend()) + partial_sum;
   }
 
   MVPolynomial operator()(const MVPolynomial& mvp, int axis) const {
